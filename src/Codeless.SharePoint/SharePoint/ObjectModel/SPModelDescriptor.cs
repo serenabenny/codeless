@@ -51,6 +51,12 @@ namespace Codeless.SharePoint.ObjectModel {
       this.TargetListUrl = targetListUrl;
     }
 
+    public SPModelListProvisionOptions(string targetListUrl, string title) {
+      CommonHelper.ConfirmNotNull(targetListUrl, "targetListUrl");
+      this.TargetListUrl = targetListUrl;
+      this.TargetListTitle = title;
+    }
+
     public SPModelListProvisionOptions(SPList targetList) {
       CommonHelper.ConfirmNotNull(targetList, "targetList");
       this.TargetWebId = targetList.ParentWeb.ID;
@@ -64,6 +70,7 @@ namespace Codeless.SharePoint.ObjectModel {
 
     public SPListAttribute ListAttributeOverrides { get; private set; }
     public string TargetListUrl { get; private set; }
+    public string TargetListTitle { get; private set; }
     public Guid TargetWebId { get; private set; }
     public Guid TargetListId { get; private set; }
   }
@@ -72,13 +79,13 @@ namespace Codeless.SharePoint.ObjectModel {
   internal class SPModelDescriptor {
     private class TypeInheritanceComparer : Comparer<Type> {
       public override int Compare(Type x, Type y) {
-        if (Object.ReferenceEquals(x, y)) {
-          return 0;
-        }
-        if (x.IsSubclassOf(y)) {
-          return 1;
-        }
-        return -1;
+        return GetDepth(x) - GetDepth(y);
+      }
+
+      private static int GetDepth(Type x) {
+        int depth = 0;
+        for (; x != typeof(SPModel); x = x.BaseType, depth++) ;
+        return depth;
       }
     }
 
@@ -120,6 +127,7 @@ namespace Codeless.SharePoint.ObjectModel {
     }
 
     private static readonly object syncLock = new object();
+    private static readonly object provisionLock = new object();
     private static readonly ConcurrentDictionary<Assembly, object> RegisteredAssembly = new ConcurrentDictionary<Assembly, object>();
     private static readonly ConcurrentDictionary<Type, SPModelDescriptor> TargetTypeDictionary = new ConcurrentDictionary<Type, SPModelDescriptor>();
     private static readonly SortedDictionary<SPContentTypeId, SPModelDescriptor> ContentTypeDictionary = new SortedDictionary<SPContentTypeId, SPModelDescriptor>(ReverseComparer<SPContentTypeId>.Default);
@@ -354,10 +362,16 @@ namespace Codeless.SharePoint.ObjectModel {
 
     public void AddInterfaceDepenedentField(SPFieldAttribute field) {
       CommonHelper.ConfirmNotNull(field, "field");
-      if (IsTwoColumnField(field) && !fieldAttributes.Contains(field)) {
-        hiddenFields.Add(field);
-        if (this.Parent != null) {
-          this.Parent.AddInterfaceDepenedentField(field);
+      if (IsTwoColumnField(field)) {
+        foreach (SPModelDescriptor d in EnumerableHelper.AncestorsAndSelf(this, v => v.Parent)) {
+          if (!d.fieldAttributes.Contains(field)) {
+            d.hiddenFields.Add(field);
+          }
+        }
+        foreach (SPModelDescriptor d in EnumerableHelper.Descendants(this, v => v.Children)) {
+          if (!d.fieldAttributes.Contains(field)) {
+            d.hiddenFields.Add(field);
+          }
         }
       }
     }
@@ -367,7 +381,10 @@ namespace Codeless.SharePoint.ObjectModel {
       foreach (SPFieldAttribute attribute in fieldAttributes.Concat(hiddenFields)) {
         if (IsTwoColumnField(attribute)) {
           try {
-            list.Fields.GetFieldByInternalName(attribute.ListFieldInternalName);
+            SPField field = list.Fields.GetFieldByInternalName(attribute.ListFieldInternalName);
+            if (!IsTwoColumnField(field)) {
+              throw new Exception(String.Format("Field '{0}' has incorrect type in list {1}", attribute.InternalName, SPUrlUtility.CombineUrl(list.ParentWebUrl, list.RootFolder.Url)));
+            }
           } catch (ArgumentException) {
             throw new Exception(String.Format("Missing field '{0}' in list {1}", attribute.InternalName, SPUrlUtility.CombineUrl(list.ParentWebUrl, list.RootFolder.Url)));
           }
@@ -444,7 +461,10 @@ namespace Codeless.SharePoint.ObjectModel {
     private void Provision(string siteUrl, Guid siteId, Guid webId, bool provisionContentType, bool provisionList, SPModelListProvisionOptions listOptions, ProvisionResult result, bool requireLock) {
       try {
         if (requireLock) {
-          Monitor.Enter(syncLock);
+          if (!Monitor.TryEnter(provisionLock, 10000)) {
+            requireLock = false;
+            throw new SPModelProvisionException("Unable to acquire lock to perform provision.");
+          }
         }
         enteredLock = true;
         if (provisionContentType) {
@@ -460,7 +480,7 @@ namespace Codeless.SharePoint.ObjectModel {
       } finally {
         enteredLock = false;
         if (requireLock) {
-          Monitor.Exit(syncLock);
+          Monitor.Exit(provisionLock);
         }
       }
     }
@@ -532,6 +552,11 @@ namespace Codeless.SharePoint.ObjectModel {
         } else {
           if (listOptions.TargetListUrl != null) {
             implListAttribute = implListAttribute.Clone(listOptions.TargetListUrl);
+          } else {
+            implListAttribute = implListAttribute.Clone();
+          }
+          if (listOptions.TargetListTitle != null) {
+            implListAttribute.Title = listOptions.TargetListTitle;
           }
           using (SPWeb targetWeb = helper.TargetSite.OpenWeb(webId)) {
             List<SPContentTypeId> contentTypes;
@@ -558,6 +583,10 @@ namespace Codeless.SharePoint.ObjectModel {
       return (field.Type == SPFieldType.Lookup || field.Type == SPFieldType.User || field.Type == SPFieldType.URL);
     }
 
+    private static bool IsTwoColumnField(SPField field) {
+      return (field.Type == SPFieldType.Lookup || field.Type == SPFieldType.User || field.Type == SPFieldType.URL);
+    }
+
     private static void SaveAssemblyName(SPSite site, SPContentTypeId contentTypeId, Assembly assembly) {
       using (site.RootWeb.GetAllowUnsafeUpdatesScope()) {
         site.RootWeb.AllProperties["SPModel." + contentTypeId.ToString().ToLower() + ".Assembly"] = assembly.FullName;
@@ -571,7 +600,11 @@ namespace Codeless.SharePoint.ObjectModel {
     }
 
     private static void RegisterAssembly(Assembly assembly) {
-      if (NeedProcess(assembly) && (assembly == typeof(SPModel).Assembly || assembly.GetReferencedAssemblies().Any(v => v.FullName == typeof(SPModel).Assembly.FullName))) {
+      AssemblyName[] refAsm = new AssemblyName[0];
+      try {
+        refAsm = assembly.GetReferencedAssemblies();
+      } catch { }
+      if (NeedProcess(assembly) && (assembly == typeof(SPModel).Assembly || refAsm.Any(v => v.FullName == typeof(SPModel).Assembly.FullName))) {
         bool requireLock = !enteredLock;
         if (requireLock) {
           Monitor.Enter(syncLock);
