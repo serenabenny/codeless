@@ -442,8 +442,18 @@ namespace Codeless.SharePoint.ObjectModel {
       SPField listField = objectCache.GetField(parentList.ParentWeb.ID, parentList.ID, siteField.Id);
       if (listField == null) {
         using (parentList.ParentWeb.GetAllowUnsafeUpdatesScope()) {
+          bool hasField = parentList.ContentTypes[0].Fields.Contains(siteField.Id);
+
           parentList.Fields.Add(siteField);
           listField = parentList.Fields[siteField.Id];
+
+          if (!hasField) {
+            // delete the list field that is automatically added to the default content type
+            // if it belongs to the default content type it will be added back later
+            SPContentType defaultContentType = parentList.ContentTypes[0];
+            defaultContentType.FieldLinks.Delete(siteField.Id);
+            defaultContentType.Update();
+          }
           objectCache.AddField(listField);
         }
       }
@@ -476,6 +486,8 @@ namespace Codeless.SharePoint.ObjectModel {
       SPField listLookupField = objectCache.GetField(parentList.ParentWeb.ID, parentList.ID, siteLookupField.Id);
       if (listLookupField == null) {
         using (parentList.ParentWeb.GetAllowUnsafeUpdatesScope()) {
+          bool hasField = parentList.ContentTypes[0].Fields.Contains(siteLookupField.Id);
+
           XmlDocument fieldSchemaXml = new XmlDocument();
           fieldSchemaXml.LoadXml(siteLookupField.SchemaXmlWithResourceTokens);
           fieldSchemaXml.DocumentElement.SetAttribute("WebId", lookupWebId.ToString("B"));
@@ -487,6 +499,13 @@ namespace Codeless.SharePoint.ObjectModel {
           listLookupField.Title = siteLookupField.Title;
           listLookupField.Update();
 
+          if (!hasField) {
+            // delete the list field that is automatically added to the default content type
+            // if it belongs to the default content type it will be added back later
+            SPContentType defaultContentType = parentList.ContentTypes[0];
+            defaultContentType.FieldLinks.Delete(listLookupField.Id);
+            defaultContentType.Update();
+          }
           objectCache.AddField(listLookupField);
           return listLookupField;
         }
@@ -546,8 +565,8 @@ namespace Codeless.SharePoint.ObjectModel {
     private static bool UpdateListViewFieldCollection(SPView view, IList<string> includedFields, IList<string> excludedFields) {
       SPViewFieldCollection viewFields = view.ViewFields;
       StringCollection existingViewFields = viewFields.ToStringCollection();
-      includedFields = new List<string>(includedFields ?? new string[0]);
-      excludedFields = new List<string>(excludedFields ?? new string[0]);
+      includedFields = new List<string>((includedFields ?? new string[0]).Distinct());
+      excludedFields = new List<string>((excludedFields ?? new string[0]).Distinct());
 
       foreach (string v in excludedFields) {
         if (includedFields.Contains(v)) {
@@ -555,14 +574,19 @@ namespace Codeless.SharePoint.ObjectModel {
         }
       }
       foreach (KeyValuePair<string, string> mapping in LinkWithMenuFieldMapping) {
-        int index = includedFields.IndexOf(mapping.Key);
-        if (index >= 0) {
-          includedFields[index] = mapping.Value;
-          excludedFields.Add(mapping.Key);
-        }
-        int index2 = excludedFields.IndexOf(mapping.Key);
-        if (index2 >= 0 && index < 0) {
-          excludedFields.Add(mapping.Value);
+        if (view.ParentList.Fields.ContainsField(mapping.Value)) {
+          int index = includedFields.IndexOf(mapping.Key);
+          if (index >= 0) {
+            includedFields[index] = mapping.Value;
+            excludedFields.Add(mapping.Key);
+          }
+          int index2 = excludedFields.IndexOf(mapping.Key);
+          if (index2 >= 0 && index < 0 && !includedFields.Contains(mapping.Value)) {
+            excludedFields.Add(mapping.Value);
+          }
+          if (includedFields.Contains(mapping.Value) && !excludedFields.Contains(mapping.Key)) {
+            excludedFields.Add(mapping.Key);
+          }
         }
       }
       foreach (string v in new[] { SPBuiltInFieldName.LinkFilename, SPBuiltInFieldName.LinkTitle }) {
@@ -576,10 +600,14 @@ namespace Codeless.SharePoint.ObjectModel {
           includedFields.Insert(0, v);
         }
       }
-      if (view.ParentList.BaseType == SPBaseType.DocumentLibrary && !includedFields.Contains(SPBuiltInFieldName.DocIcon)) {
-        includedFields.Insert(0, SPBuiltInFieldName.DocIcon);
-      } else if (!excludedFields.Contains(SPBuiltInFieldName.DocIcon)) {
-        excludedFields.Add(SPBuiltInFieldName.DocIcon);
+      if (!excludedFields.Contains(SPBuiltInFieldName.DocIcon)) {
+        if (view.ParentList.BaseType == SPBaseType.DocumentLibrary) {
+          if (!includedFields.Contains(SPBuiltInFieldName.DocIcon)) {
+            includedFields.Insert(0, SPBuiltInFieldName.DocIcon);
+          }
+        } else {
+          excludedFields.Add(SPBuiltInFieldName.DocIcon);
+        }
       }
 
       int currentIndex = 0;
@@ -596,7 +624,7 @@ namespace Codeless.SharePoint.ObjectModel {
         if (index < 0 || index < currentIndex) {
           viewFields.MoveFieldTo(internalName, currentIndex);
         }
-        currentIndex = Math.Max(index, currentIndex) + 1;
+        currentIndex = Math.Min(viewFields.Count, Math.Max(index, currentIndex) + 1);
       }
       foreach (string internalName in excludedFields) {
         if (existingViewFields.Contains(internalName)) {
