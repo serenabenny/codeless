@@ -79,13 +79,13 @@ namespace Codeless.SharePoint.ObjectModel {
   internal class SPModelDescriptor {
     private class TypeInheritanceComparer : Comparer<Type> {
       public override int Compare(Type x, Type y) {
-        if (Object.ReferenceEquals(x, y)) {
-          return 0;
-        }
-        if (x.IsSubclassOf(y)) {
-          return 1;
-        }
-        return -1;
+        return GetDepth(x) - GetDepth(y);
+      }
+
+      private static int GetDepth(Type x) {
+        int depth = 0;
+        for (; x != typeof(SPModel); x = x.BaseType, depth++) ;
+        return depth;
       }
     }
 
@@ -504,7 +504,7 @@ namespace Codeless.SharePoint.ObjectModel {
                   using (SPWeb listParentWeb = listParentSite.OpenWeb()) {
                     SPList list;
                     try {
-                      list = listParentWeb.GetList(usage.Url);
+                      list = listParentWeb.GetListSafe(usage.Url);
                     } catch (FileNotFoundException) {
                       continue;
                     }
