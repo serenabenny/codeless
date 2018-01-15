@@ -96,7 +96,20 @@ namespace Codeless.SharePoint {
       if (forceRefresh) {
         InstanceFactory.Destroy(siteId);
       }
-      return InstanceFactory.GetInstance(siteId, LoadInternal);
+      try {
+        // avoid config being cache without adding cache policy to HttpContext.Current.Cache
+        if (HttpContext.Current == null) {
+          T config;
+          if (((IDictionary<Guid, T>)InstanceFactory).TryGetValue(siteId, out config)) {
+            return config;
+          }
+          return LoadInternal(siteId);
+        }
+        return InstanceFactory.GetInstance(siteId, LoadInternal);
+      } catch (Exception ex) {
+        Logger.Error(ex);
+        return new T();
+      }
     }
 
     /// <summary>
@@ -185,17 +198,15 @@ namespace Codeless.SharePoint {
             pd.SetValue(config, Activator.CreateInstance(pd.PropertyType));
           }
         }
-        try {
-          SiteConfigEntry.IsInternalUpdate = true;
-          provider.CommitChanges();
-        } finally {
-          SiteConfigEntry.IsInternalUpdate = false;
-        }
+        provider.CommitChanges();
 
         if (HttpContext.Current != null) {
           CacheDependency cacheDependency = provider.GetCacheDependency();
           if (cacheDependency != null) {
-            HttpContext.Current.Cache.Add(cacheDependency.GetUniqueID(), new object(), cacheDependency, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration, CacheItemPriority.Normal, (k, v, r) => Invalidate(siteId));
+            HttpContext.Current.Cache.Add(cacheDependency.GetUniqueID(), new object(), cacheDependency, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration, CacheItemPriority.Normal, (k, v, r) => {
+              Logger.Info("Site config ({0}) flushed due to cache dependency.", typeof(T).FullName);
+              Invalidate(siteId);
+            });
           }
         }
       }

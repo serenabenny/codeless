@@ -14,8 +14,9 @@ namespace Codeless.SharePoint.ObjectModel {
 
     private SPModelUsage() { }
 
-    private SPModelUsage(SPList list, bool maintainReference) {
+    private SPModelUsage(SPList list, SPContentTypeId id, bool maintainReference) {
       CommonHelper.ConfirmNotNull(list, "list");
+      this.ContentTypeId = id;
       this.WebId = list.ParentWeb.ID;
       this.ListId = list.ID;
       this.ServerRelativeUrl = list.RootFolder.ServerRelativeUrl;
@@ -25,26 +26,25 @@ namespace Codeless.SharePoint.ObjectModel {
     }
 
     public string ServerRelativeUrl { get; private set; }
+    public SPContentTypeId ContentTypeId { get; private set; }
     public Guid WebId { get; private set; }
     public Guid ListId { get; private set; }
     public SPList List { get; private set; }
 
-    public SPModelUsage EnsureList(SPSite site) {
-      CommonHelper.ConfirmNotNull(site, "site");
+    public SPModelUsage EnsureList(SPObjectCache objectCache) {
+      CommonHelper.ConfirmNotNull(objectCache, "objectCache");
       if (this.List != null || this.ListId == Guid.Empty) {
-        return this;
-      }
-      SPWeb web = site.TryGetWebForCurrentUser(this.WebId);
-      if (web == null) {
         return this;
       }
       try {
         using (new SPSecurity.SuppressAccessDeniedRedirectInScope()) {
-          return new SPModelUsage(web.Lists[this.ListId], true);
+          SPList list = objectCache.GetList(this.WebId, this.ListId);
+          if (list != null) {
+            return new SPModelUsage(list, this.ContentTypeId, true);
+          }
         }
-      } catch (Exception) {
-        return this;
-      }
+      } catch { }
+      return this;
     }
 
     public SPModelUsage GetWithoutList() {
@@ -52,6 +52,7 @@ namespace Codeless.SharePoint.ObjectModel {
         return this;
       }
       return new SPModelUsage {
+        ContentTypeId = this.ContentTypeId,
         ServerRelativeUrl = this.ServerRelativeUrl,
         WebId = this.WebId,
         ListId = this.ListId
@@ -60,7 +61,7 @@ namespace Codeless.SharePoint.ObjectModel {
 
     public bool Equals(SPModelUsage other) {
       if (other != null) {
-        return WebId == other.WebId && ListId == other.ListId;
+        return this.ContentTypeId == other.ContentTypeId;
       }
       return false;
     }
@@ -74,15 +75,15 @@ namespace Codeless.SharePoint.ObjectModel {
     }
 
     public override int GetHashCode() {
-      return WebId.GetHashCode() ^ ListId.GetHashCode();
+      return this.ContentTypeId.GetHashCode();
     }
 
-    public static SPModelUsage Create(SPList list) {
+    public static SPModelUsage Create(SPList list, SPContentTypeId id) {
       CommonHelper.ConfirmNotNull(list, "list");
-      SPModelUsage returnValue = new SPModelUsage(list, true);
-      SPModelUsage item = returnValue.GetWithoutList();
+      SPModelUsage returnValue = new SPModelUsage(list, id, true);
+      dictionary.EnsureKeyValue(id, () => returnValue.GetWithoutList());
       foreach (SPContentType contentType in list.ContentTypes) {
-        dictionary.EnsureKeyValue(contentType.Id, () => item);
+        dictionary.EnsureKeyValue(contentType.Id, () => new SPModelUsage(list, contentType.Id, false));
       }
       return returnValue;
     }
@@ -101,7 +102,7 @@ namespace Codeless.SharePoint.ObjectModel {
         using (SPWeb web = newSite.OpenWeb()) {
           try {
             SPList list = web.GetListSafe(usage.Url);
-            value = SPModelUsage.Create(list).GetWithoutList();
+            value = SPModelUsage.Create(list, usage.Id).GetWithoutList();
           } catch (FileNotFoundException) {
             value = new SPModelUsage {
               ServerRelativeUrl = usage.Url
@@ -117,13 +118,26 @@ namespace Codeless.SharePoint.ObjectModel {
   internal sealed class SPModelUsageCollection : ReadOnlyCollection<SPModelUsage> {
     private readonly SPSite parentSite;
 
-    public SPModelUsageCollection(SPSite parentSite, IList<SPModelUsage> collection)
-      : base(collection) {
+    public SPModelUsageCollection(SPSite parentSite, IEnumerable<SPModelUsage> collection)
+      : base(new List<SPModelUsage>(collection)) {
       this.parentSite = parentSite;
     }
 
     public IList<SPList> GetListCollection() {
-      return this.Select(v => v.EnsureList(parentSite).List).Where(v => v != null).ToArray();
+      SPObjectCache objectCache = new SPObjectCache(parentSite);
+      return this.Distinct(ListIdComparer.Default).Select(v => v.EnsureList(objectCache).List).Where(v => v != null).ToArray();
+    }
+
+    private class ListIdComparer : IEqualityComparer<SPModelUsage> {
+      public static readonly ListIdComparer Default = new ListIdComparer();
+
+      public bool Equals(SPModelUsage x, SPModelUsage y) {
+        return x.ListId == y.ListId;
+      }
+
+      public int GetHashCode(SPModelUsage obj) {
+        return obj.ListId.GetHashCode();
+      }
     }
   }
 }

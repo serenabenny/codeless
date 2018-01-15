@@ -17,21 +17,21 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\bin\</OutputPath>
+    <OutputPath>..\bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>..\bin\Codeless.SharePoint.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <DocumentationFile>..\bin\Codeless.SharePoint.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -41,7 +41,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Codeless, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6e028f30b8da22f9, processorArchitecture=MSIL">
-      <HintPath>..\packages\Codeless.Core.1.1.371.0\lib\net35\Codeless.dll</HintPath>
+      <HintPath>..\packages\Codeless.Core.1.1.373.0\lib\net35\Codeless.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="IQToolkit, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6e028f30b8da22f9, processorArchitecture=MSIL">
@@ -129,10 +129,16 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SharePoint\CamlExpression.cs" />
+    <Compile Include="SharePoint\CamlExpressionVisitor.cs" />
     <Compile Include="SharePoint\CamlParameterBinding.cs" />
+    <Compile Include="SharePoint\CamlParameterBindingHashtable.cs" />
+    <Compile Include="SharePoint\CamlParameterName.cs" />
+    <Compile Include="SharePoint\ICamlParameterBinding.cs" />
+    <Compile Include="SharePoint\ISPObjectContext.cs" />
     <Compile Include="SharePoint\Internal\KnownFields.cs" />
     <Compile Include="SharePoint\Internal\SPChangeQueryExecutor.cs" />
     <Compile Include="SharePoint\ObjectModel\SPModelEventHandler.cs" />
+    <Compile Include="SharePoint\ObjectModel\SPModelProvisionMulticastEventReceiver.cs" />
     <Compile Include="SharePoint\ObjectModel\_Attributes\SPModelInterfaceAttribute.cs" />
     <Compile Include="SharePoint\SPAggregatedChange.cs" />
     <Compile Include="SharePoint\SPChangeMonitor.cs" />

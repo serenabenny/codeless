@@ -15,16 +15,39 @@ namespace Codeless.SharePoint.ObjectModel {
     private bool currentItemInitialized;
 
     /// <summary>
-    /// Creates an instance of <see cref="SPModelManager{T}"/> with the specified site. 
-    /// Items under the specified site and its descendant sites can be queried.
+    /// Initializes an instance of the <see cref="SPModelManager{T}"/> class that queries list items under the specified site collection and its sub-sites.
+    /// </summary>
+    /// <param name="site">The site collection object to query against.</param>
+    public SPModelManager(SPSite site)
+      : base(site) { }
+
+    /// <summary>
+    /// Initializes an instance of the <see cref="SPModelManager{T}"/> class that queries list items under the specified site and its sub-sites.
     /// </summary>
     /// <param name="web">Site object.</param>
     public SPModelManager(SPWeb web)
       : base(web) { }
 
+    /// <summary>
+    /// Initializes an instance of the <see cref="SPModelManager{T}"/> class that queries list items under the specified site and optionally its sub-sites.
+    /// </summary>
+    /// <param name="web">The site object to query against.</param>
+    /// <param name="currentWebOnly">A boolean value specifies whether lists in sub-sites should also be queried.</param>
+    public SPModelManager(SPWeb web, bool currentWebOnly)
+      : base(web, currentWebOnly) { }
+
+    /// <summary>
+    /// Initializes an instance of the <see cref="SPModelManager{T}"/> class that queries list items under the specified list.
+    /// </summary>
+    /// <param name="list">The list object to query against.</param>
     public SPModelManager(SPList list)
       : base(list) { }
 
+    /// <summary>
+    /// Initializes an instance of the <see cref="SPModelManager{T}"/> class that queries list items under the specified list(s).
+    /// </summary>
+    /// <param name="web">The site object.</param>
+    /// <param name="lists">A List of lists to query against.</param>
     public SPModelManager(SPWeb web, IList<SPList> lists)
       : base(web, lists) { }
 
@@ -122,6 +145,18 @@ namespace Codeless.SharePoint.ObjectModel {
     /// <returns>A collection containing the returned items.</returns>
     public new SPModelCollection<TItem> GetItems<TItem>(CamlExpression query, uint limit) {
       return base.GetItems<TItem>(query, limit);
+    }
+
+    /// <summary>
+    /// Gets items of the associated content type(s) that satisfy the condition.
+    /// </summary>
+    /// <typeparam name="TItem">Item type.</typeparam>
+    /// <param name="query">CAML query expression.</param>
+    /// <param name="limit">Maximum number of items to be returned.</param>
+    /// <param name="startRow">Number of items to skip from start.</param>
+    /// <returns>A collection containing the returned items.</returns>
+    public new SPModelCollection<TItem> GetItems<TItem>(CamlExpression query, uint limit, uint startRow) {
+      return base.GetItems<TItem>(query, limit, startRow);
     }
 
     /// <summary>
@@ -311,6 +346,25 @@ namespace Codeless.SharePoint.ObjectModel {
     /// <param name="mode">An value of <see cref="Codeless.SharePoint.ObjectModel.SPModelCommitMode" /> representing how a list item is updated.</param>
     public new void CommitChanges(T item, SPModelCommitMode mode) {
       base.CommitChanges(item, mode);
+    }
+
+    /// <summary>
+    /// Executes specified operation on the file represented by the model object with no comment.
+    /// </summary>
+    /// <param name="item">An item which operation is being performed on.</param>
+    /// <param name="operation">The operation to be performed.</param>
+    public new void ExecuteFileOperation(T item, SPModelFileOperation operation) {
+      base.ExecuteFileOperation(item, operation);
+    }
+
+    /// <summary>
+    /// Executes specified operation on the file represented by the model object with the specified comment.
+    /// </summary>
+    /// <param name="item">An item which operation is being performed on.</param>
+    /// <param name="operation">The operation to be performed.</param>
+    /// <param name="comment">A string that contains a comment about the operation. It is ignored for some oeprations.</param>
+    public new void ExecuteFileOperation(T item, SPModelFileOperation operation, string comment) {
+      base.ExecuteFileOperation(item, operation, comment);
     }
     #endregion
   }
