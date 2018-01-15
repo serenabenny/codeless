@@ -29,6 +29,7 @@ namespace Codeless.SharePoint.ObjectModel {
       SPBuiltInFieldName.FileRef,
       SPBuiltInFieldName.FileLeafRef,
       SPBuiltInFieldName.PermMask,
+      SPBuiltInFieldName.ScopeId,
       SPBuiltInFieldName.ID,
       SPBuiltInFieldName._UIVersionString,
       SPBuiltInFieldName.CheckoutUser,
@@ -202,7 +203,7 @@ namespace Codeless.SharePoint.ObjectModel {
           return;
       }
     }
-    
+
     public static void Watch<T>(SPSite site, EventHandler<SPChangeMonitorEventArgs> listener) {
       CommonHelper.ConfirmNotNull(listener, "listener");
       SPModelMonitor<T>.GetMonitor(site).ObjectChanged += listener;
@@ -345,6 +346,22 @@ namespace Codeless.SharePoint.ObjectModel {
     }
 
     /// <summary>
+    /// Gets the default manager instantiated with the specified site and an existing SharePoint object cache.
+    /// Actual type of the created manager can be set through <see cref="SPModelManagerDefaultTypeAttribute"/> on the model type.
+    /// If there is no <see cref="SPModelManagerDefaultTypeAttribute"/> specified, an <see cref="SPModelManager{T}"/> object is instantiated with <paramref name="type"/>.
+    /// </summary>
+    /// <param name="type">Model type.</param>
+    /// <param name="contextWeb">A site object.</param>
+    /// <param name="cache">An instance of SharePoint object cache.</param>
+    /// <returns>A manager object.</returns>
+    public static ISPModelManager GetDefaultManager(Type type, SPWeb contextWeb, SPObjectCache cache) {
+      SPModelDescriptor descriptor = SPModelDescriptor.Resolve(type);
+      ISPModelManagerInternal manager = descriptor.CreateManager(contextWeb);
+      manager.ObjectCache = cache;
+      return manager;
+    }
+
+    /// <summary>
     /// Gets all lists under the specified site and all its descendant sites which contains the content type associated with the model type.
     /// </summary>
     /// <param name="type">Model type.</param>
@@ -353,7 +370,7 @@ namespace Codeless.SharePoint.ObjectModel {
     /// <returns>An enumerable of list objects.</returns>
     public static IEnumerable<SPList> EnumerateLists(Type type, SPWeb contextWeb) {
       SPModelDescriptor descriptor = SPModelDescriptor.Resolve(type);
-      return descriptor.GetUsages(contextWeb).Select(v => v.EnsureList(contextWeb.Site).List).Where(v => v != null).ToArray();
+      return descriptor.GetUsages(contextWeb).GetListCollection();
     }
 
     /// <summary>
@@ -391,9 +408,6 @@ namespace Codeless.SharePoint.ObjectModel {
       } catch (MemberAccessException) {
         return null;
       }
-      if (adapter.Web.AvailableContentTypes[contentTypeId] == null) {
-        contentTypeId = contentTypeId.Parent;
-      }
       SPModelDescriptor descriptor;
       try {
         descriptor = SPModelDescriptor.Resolve(contentTypeId, adapter.Site);
@@ -402,6 +416,17 @@ namespace Codeless.SharePoint.ObjectModel {
       }
       ISPModelManagerInternal manager = descriptor.CreateManager(adapter.Web);
       return manager.TryCreateModel(adapter, false);
+    }
+
+    /// <summary>
+    /// Creates a model object representing the list item.
+    /// </summary>
+    /// <param name="adapter">A data access adapter of the list item.</param>
+    /// <param name="manager">An instance of the <see cref="ISPModelManager"/> class which model object created will belongs to this manager.</param>
+    /// <returns>A model object or *null* if there is no types associated with the content type of the list item.</returns>
+    public static SPModel TryCreate(ISPListItemAdapter adapter, ISPModelManager manager) {
+      CommonHelper.ConfirmNotNull(manager, "manager");
+      return ((ISPModelManagerInternal)manager).TryCreateModel(adapter, false);
     }
 
     internal static SPModel TryCreate(ISPListItemAdapter adapter, SPModelCollection parentCollection) {
@@ -420,7 +445,7 @@ namespace Codeless.SharePoint.ObjectModel {
       try {
         calledByInternal = true;
         SPModel item = (SPModel)exactType.ModelInstanceType.CreateInstance();
-        item.Adapter = Intercept.ThroughProxy(adapter, new TransparentProxyInterceptor(), new[] { new SPListItemAdapterInterceptionBehavior(adapter, parentCollection) });
+        item.Adapter = Intercept.ThroughProxy(adapter, new TransparentProxyInterceptor(), new[] { new SPListItemAdapterInterceptionBehavior(item, adapter, parentCollection) });
         item.ParentCollection = parentCollection;
         return item;
       } finally {
@@ -620,6 +645,10 @@ namespace Codeless.SharePoint.ObjectModel {
       get { return this.Adapter.ServerRelativeUrl.TrimStart('/'); }
     }
 
+    string ISPModelMetaData.ServerRelativeUrl {
+      get { return this.Adapter.ServerRelativeUrl; }
+    }
+
     Guid ISPModelMetaData.SiteId {
       get { return this.Adapter.Site.ID; }
     }
@@ -633,6 +662,10 @@ namespace Codeless.SharePoint.ObjectModel {
     }
 
     string ISPModelMetaData.FileLeafRef {
+      get { return this.Adapter.Filename; }
+    }
+
+    string ISPModelMetaData.Filename {
       get { return this.Adapter.Filename; }
     }
 
@@ -653,7 +686,7 @@ namespace Codeless.SharePoint.ObjectModel {
     }
 
     int ISPModelMetaData.CheckOutUserID {
-      get { 
+      get {
         SPPrincipal p = this.Adapter.GetUserFieldValue(SPBuiltInFieldName.CheckoutUser);
         return p == null ? 0 : p.ID;
       }

@@ -31,8 +31,8 @@ namespace Codeless.SharePoint {
 
       listAttribute = InitializeListSettings(listAttribute);
       SPModelDescriptor descriptor = SPModelDescriptor.Resolve(typeof(SiteConfigEntry));
-      IList<SPList> lists = descriptor.Provision(site.RootWeb, SPModelProvisionOptions.None, new SPModelListProvisionOptions(listAttribute)).GetListCollection();
-      return new SPModelManager<SiteConfigEntry>(site.RootWeb, lists);
+      descriptor.Provision(site.RootWeb, SPModelProvisionOptions.Asynchronous, new SPModelListProvisionOptions(listAttribute)).GetListCollection();
+      return new SPModelManager<SiteConfigEntry>(site.RootWeb);
     }
 
     void ISiteConfigProvider.Initialize(SPSite site) {
@@ -45,8 +45,9 @@ namespace Codeless.SharePoint {
     }
 
     CacheDependency ISiteConfigProvider.GetCacheDependency() {
+      ISPModelManagerInternal manager = this.manager;
       foreach (SPModelUsage usage in manager.ContextLists) {
-        SPList list = usage.EnsureList(manager.Site).List;
+        SPList list = usage.EnsureList(manager.ObjectCache).List;
         if (list != null) {
           return new SPListCacheDependency(list);
         }
@@ -75,7 +76,12 @@ namespace Codeless.SharePoint {
     void ISiteConfigProvider.UpdateEntry(ISiteConfigEntry entry) { }
 
     void ISiteConfigProvider.CommitChanges() {
-      manager.CommitChanges();
+      try {
+        SiteConfigEntry.IsInternalUpdate = true;
+        manager.CommitChanges();
+      } finally {
+        SiteConfigEntry.IsInternalUpdate = false;
+      }
     }
   }
 }

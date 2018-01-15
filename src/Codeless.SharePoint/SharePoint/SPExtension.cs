@@ -22,7 +22,7 @@ namespace Codeless.SharePoint {
   /// </summary>
   public static class SPExtension {
     private static readonly Regex GuidRegex = new Regex(@"^(?<b>\{)?[A-F0-9]{8}(?:-?[A-F0-9]{4}){3}-?[A-F0-9]{12}(?(b)\}|)$", RegexOptions.IgnoreCase);
-    private static readonly Regex UserDataFieldColNameRegex = new Regex(@"^(bit|datatime|float|int|ntext|nvarchar|sql_variant|uniqueidentifier)\d+$", RegexOptions.IgnoreCase);
+    private static readonly Regex UserDataFieldColNameRegex = new Regex(@"^(bit|datetime|float|int|ntext|nvarchar|sql_variant|uniqueidentifier)\d+$", RegexOptions.IgnoreCase);
     private static readonly DateTime SPDateTimeMin = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     private static readonly DateTime SPDateTimeMax = new DateTime(8900, 12, 31, 0, 0, 0, DateTimeKind.Utc);
 
@@ -419,21 +419,12 @@ namespace Codeless.SharePoint {
       if (value.ID == webId) {
         return value;
       }
-      Stack<Guid> parentWebIds = new Stack<Guid>();
-      using (SPSite elevatedSite = new SPSite(site.ID, SPUserToken.SystemAccount)) {
-        using (SPWeb targetWeb = elevatedSite.OpenWeb(webId)) {
-          for (SPWeb web = targetWeb; web.ID != value.ID; web = web.ParentWeb) {
-            parentWebIds.Push(web.ID);
-          }
-        }
+      SPContext current = SPContext.Current;
+      if (current != null && site == current.Site) {
+        SPObjectCache objectCache = SPObjectCache.GetInstanceForCurrentContext();
+        return objectCache.GetWeb(webId);
       }
-      while (parentWebIds.Count > 0) {
-        value = value.GetSubWebByIDSafe(parentWebIds.Pop());
-        if (value == null) {
-          return null;
-        }
-      }
-      return value;
+      return SPExtensionHelper.OpenWebSafe(site, webId);
     }
 
     /// <summary>
@@ -634,6 +625,57 @@ namespace Codeless.SharePoint {
     }
 
     /// <summary>
+    /// Returns the file object located at the specified URL.
+    /// </summary>
+    /// <param name="web">A site.</param>
+    /// <param name="strUrl">A string that contains the URL for the file.</param>
+    /// <returns>An <see cref="Microsoft.SharePoint.SPFile"/> object that represents the file; -or- *null* if the file does not exists.</returns>
+    public static SPFile GetFileSafe(this SPWeb web, string strUrl) {
+      try {
+        SPFile file = web.GetFile(strUrl);
+        if (file.Exists) {
+          return file;
+        }
+      } catch (FileNotFoundException) { }
+      return null;
+    }
+
+    /// <summary>
+    /// Returns the folder object located at the specified URL.
+    /// </summary>
+    /// <param name="web">A site.</param>
+    /// <param name="strUrl">A string that contains the URL for the folder.</param>
+    /// <returns>An <see cref="Microsoft.SharePoint.SPFolder"/> object that represents the folder; -or- *null* if the folder does not exists.</returns>
+    public static SPFolder GetFolderSafe(this SPWeb web, string strUrl) {
+      try {
+        SPFolder folder = web.GetFolder(strUrl);
+        if (folder.Exists) {
+          return folder;
+        }
+      } catch (FileNotFoundException) { }
+      return null;
+
+    }
+
+    /// <summary>
+    /// Returns a file or folder on the Web site with the specified URL.
+    /// </summary>
+    /// <param name="web">A site.</param>
+    /// <param name="strUrl">A string that contains the URL of the file or folder.</param>
+    /// <returns>An <see cref="Microsoft.SharePoint.SPFile"/> or <see cref="Microsoft.SharePoint.SPFolder"/> object that represents the file or folder; -or- *null* if the file or folder does not exists.</returns>
+    public static object GetFileOrFolderObjectSafe(this SPWeb web, string strUrl) {
+      try {
+        object fileOrFolder = web.GetFileOrFolderObject(strUrl);
+        SPFile file = fileOrFolder as SPFile;
+        if (file == null || file.EffectiveRawPermissions.HasFlag(SPBasePermissions.OpenItems)) {
+          return fileOrFolder;
+        }
+      } catch (FileNotFoundException) {
+      } catch (DirectoryNotFoundException) { }
+      return null;
+    }
+
+    /// <summary>
     /// Gets an <see cref="SPFile"/> or <see cref="SPFolder"/> object at the specfied URL.
     /// </summary>
     /// <param name="site">A site collection.</param>
@@ -641,25 +683,18 @@ namespace Codeless.SharePoint {
     /// <returns>An <see cref="SPFile"/> or <see cref="SPFolder"/> object, or *null* if the specified URL does not exist.</returns>
     public static object GetFileOrFolder(this SPSite site, string strUrl) {
       CommonHelper.ConfirmNotNull(strUrl, "strUrl");
-      SPWeb currentWeb = site.RootWeb;
-      if (strUrl.StartsWith(currentWeb.ServerRelativeUrl, StringComparison.OrdinalIgnoreCase)) {
-        strUrl = strUrl.Substring(currentWeb.ServerRelativeUrl.Length).TrimStart('/');
-      } else if (strUrl.StartsWith(currentWeb.Url, StringComparison.OrdinalIgnoreCase)) {
-        strUrl = strUrl.Substring(currentWeb.Url.Length).TrimStart('/');
+      SPWeb currentWeb;
+      if (!strUrl.StartsWith("/")) {
+        strUrl = SPUrlUtility.CombineUrl(site.ServerRelativeUrl, strUrl);
       }
-      foreach (string segment in strUrl.Split('/')) {
-        SPWeb childWeb = currentWeb.GetSubWebByNameSafe(segment);
-        if (childWeb != null) {
-          currentWeb = childWeb;
-        } else {
-          break;
-        }
+      SPContext current = SPContext.Current;
+      if (current != null && site == current.Site) {
+        SPObjectCache objectCache = SPObjectCache.GetInstanceForCurrentContext();
+        currentWeb = objectCache.TryGetWeb(strUrl);
+      } else {
+        currentWeb = SPExtensionHelper.OpenWebSafe(site, strUrl, false);
       }
-      try {
-        return currentWeb.GetFileOrFolderObject(SPUrlUtility.CombineUrl(site.ServerRelativeUrl, strUrl));
-      } catch (FileNotFoundException) {
-        return null;
-      }
+      return currentWeb.GetFileOrFolderObjectSafe(strUrl);
     }
 
     /// <summary>
@@ -683,8 +718,18 @@ namespace Codeless.SharePoint {
     /// </summary>
     /// <param name="item">A list item.</param>
     public static void EnsureApproved(this SPListItem item) {
+      EnsureApproved(item, String.Empty);
+    }
+
+    /// <summary>
+    /// Ensures the specified list item are approved. If the list item is under list folders, all parent folders are also approved.
+    /// </summary>
+    /// <param name="item">A list item.</param>
+    /// <param name="comment">Comment message.</param>
+    public static void EnsureApproved(this SPListItem item, string comment) {
       if (item.ModerationInformation != null && item.ModerationInformation.Status != SPModerationStatusType.Approved) {
         item.ModerationInformation.Status = SPModerationStatusType.Approved;
+        item.ModerationInformation.Comment = comment;
         item.Update();
       }
       SPFolder folder;
@@ -694,7 +739,7 @@ namespace Codeless.SharePoint {
         folder = item.File.ParentFolder;
       }
       if (folder != null && folder.ParentListId != Guid.Empty && folder.Item != null) {
-        folder.Item.EnsureApproved();
+        folder.Item.EnsureApproved(comment);
       }
     }
 
@@ -703,8 +748,17 @@ namespace Codeless.SharePoint {
     /// </summary>
     /// <param name="folder">An <see cref="SPFolder"/> object.</param>
     public static void EnsureApproved(this SPFolder folder) {
+      EnsureApproved(folder, String.Empty);
+    }
+
+    /// <summary>
+    /// Ensures the specified folder and all parent folders are approved.
+    /// </summary>
+    /// <param name="folder">An <see cref="SPFolder"/> object.</param>
+    /// <param name="comment">Comment message.</param>
+    public static void EnsureApproved(this SPFolder folder, string comment) {
       if (folder.Item != null) {
-        folder.Item.EnsureApproved();
+        folder.Item.EnsureApproved(comment);
       }
     }
 
@@ -726,6 +780,18 @@ namespace Codeless.SharePoint {
     public static IDisposable GetCheckOutScope(this SPFile file, bool publishOnDispose) {
       return new SPFileCheckOutScope(file, true, publishOnDispose, null);
     }
+
+    /// <summary>
+    /// Ensures the specified file is checked out to the current user before performing edit operation, and optionally publish the file on dispose.
+    /// </summary>
+    /// <param name="file">An <see cref="SPFile"/> object.</param>
+    /// <param name="publishOnDispose">Whether to publish the file on dispose.</param>
+    /// <param name="checkInComment">Comment message.</param>
+    /// <returns>An <see cref="IDisposable"/> object.</returns>
+    public static IDisposable GetCheckOutScope(this SPFile file, bool publishOnDispose, string checkInComment) {
+      return new SPFileCheckOutScope(file, true, publishOnDispose, checkInComment);
+    }
+
 
     /// <summary>
     /// Enables scheduled publishing on the given list.
@@ -865,6 +931,22 @@ namespace Codeless.SharePoint {
         throw new Exception("Workflow failed to start with the following error: " + collection[0][SPBuiltInFieldName.Description]);
       }
       throw new Exception("Workflow failed to start.");
+    }
+
+    /// <summary>
+    /// Gets a running workflow instance of the specified workflow associated with the list item.
+    /// </summary>
+    /// <param name="listItem">A list item.</param>
+    /// <param name="workflowBaseId">A GUID specifying the workflow.</param>
+    /// <returns>A instance of the <see cref="SPWorkflow"/> type that represents the workflow; -or- *null* if there is no running instance of the specified workflow.</returns>
+    public static SPWorkflow GetActiveWorkflow(this SPListItem listItem, Guid workflowBaseId) {
+      SPWorkflowManager manager = listItem.Web.Site.WorkflowManager;
+      foreach (SPWorkflow wf in manager.GetItemActiveWorkflows(listItem)) {
+        if (wf.ParentAssociation.BaseId == workflowBaseId) {
+          return wf;
+        }
+      }
+      return null;
     }
 
     /// <summary>

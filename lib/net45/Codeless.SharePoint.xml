@@ -113,14 +113,14 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:Codeless.SharePoint.CamlExpression.HandleAnd(Codeless.SharePoint.CamlExpression)">
+        <member name="M:Codeless.SharePoint.CamlExpression.HandleAnd(Codeless.SharePoint.CamlExpression,System.Boolean)">
             <summary>
             When overriden, handles a logical And operation against another expression.
             </summary>
             <param name="x">Another expression.</param>
             <returns>A resulting expression.</returns>
         </member>
-        <member name="M:Codeless.SharePoint.CamlExpression.HandleOr(Codeless.SharePoint.CamlExpression)">
+        <member name="M:Codeless.SharePoint.CamlExpression.HandleOr(Codeless.SharePoint.CamlExpression,System.Boolean)">
             <summary>
             When overriden, handles a logical Or operation against another expression.
             </summary>
@@ -199,6 +199,134 @@
             <param name="settings">XML writer settings.</param>
             <returns>A delegate of a string builder.</returns>
         </member>
+        <member name="M:Codeless.SharePoint.CamlExpression.BindValue(Codeless.SharePoint.ICamlParameterBinding,System.Collections.Hashtable)">
+            <summary>
+            Gets the string representation of the binded value.
+            </summary>
+            <param name="value">An instance of a parameter in a CAML expression.</param>
+            <param name="bindings">A dictionary containing values that are associated to parameter names.</param>
+            <returns>A string representation of the binded value; -or- a placeholder string for unbinded parameters.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpression.BindValues(Codeless.SharePoint.ICamlParameterBinding,System.Collections.Hashtable)">
+            <summary>
+            Gets an enumerable collection of string representations of the binded values.
+            </summary>
+            <param name="value">An instance of a parameter in a CAML expression.</param>
+            <param name="bindings">A dictionary containing values that are associated to parameter names.</param>
+            <returns>An enumerable collection of string representations of the binded values; -or- a placeholder string for unbinded parameters.</returns>
+        </member>
+        <member name="T:Codeless.SharePoint.CamlExpressionVisitor">
+            <summary>
+            Providers a base class that visits a CAML expression.
+            </summary>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.#ctor">
+            <summary>
+            Instantiate an instance of the <see cref="T:Codeless.SharePoint.CamlExpressionVisitor"/> class.
+            </summary>
+        </member>
+        <member name="P:Codeless.SharePoint.CamlExpressionVisitor.Bindings">
+            <summary>
+            Gets the values binded to the CAML expression that is visiting.
+            </summary>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.Visit(Codeless.SharePoint.CamlExpression)">
+            <summary>
+            Called when visiting a sub-expression.
+            </summary>
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlExpression"/> class representing the visiting expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitBindedExpression(Codeless.SharePoint.CamlBindedExpression)">
+            <summary>
+            Called when visiting a CAML expression with binded values.
+            </summary>
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlBindedExpression"/> class representing the value-binded expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitViewFieldsExpression(Codeless.SharePoint.CamlViewFieldsExpression)">
+            <summary>
+            Called when visiting a &lt;ViewFields/&gt; element.
+            </summary>=
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlViewFieldsExpression"/> class representing the &lt;ViewFields/&gt; expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitOrderByExpression(Codeless.SharePoint.CamlOrderByExpression)">
+            <summary>
+            Called when visiting a &lt;OrderBy/&gt; element.
+            </summary>=
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlOrderByExpression"/> class representing the &lt;OrderBy/&gt; expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitGroupByExpression(Codeless.SharePoint.CamlGroupByExpression)">
+            <summary>
+            Called when visiting a &lt;GroupBy/&gt; element.
+            </summary>=
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlGroupByExpression"/> class representing the &lt;GroupBy/&gt; expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitViewFieldsFieldRefExpression(Codeless.SharePoint.CamlViewFieldsFieldRefExpression)">
+            <summary>
+            Called when visiting a &lt;FieldRef/&gt; expression inside a &lt;ViewFields/&gt; element.
+            </summary>
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlViewFieldsFieldRefExpression"/> class representing the &lt;FieldRef/&gt; expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitOrderByFieldRefExpression(Codeless.SharePoint.CamlOrderByFieldRefExpression)">
+            <summary>
+            Called when visiting a &lt;FieldRef/&gt; expression inside an &lt;OrderBy/&gt; element.
+            </summary>
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlOrderByFieldRefExpression"/> class representing the &lt;FieldRef/&gt; expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitGroupByFieldRefExpression(Codeless.SharePoint.CamlGroupByFieldRefExpression)">
+            <summary>
+            Called when visiting a &lt;FieldRef/&gt; expression inside a &lt;GroupBy/&gt; element.
+            </summary>
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlGroupByFieldRefExpression"/> class representing the &lt;FieldRef/&gt; expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitWhereUnaryComparisonExpression(Codeless.SharePoint.CamlWhereUnaryComparisonExpression)">
+            <summary>
+            Called when visiting a unary comparison expression inside a &lt;Where/&gt; element.
+            </summary>
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlWhereUnaryComparisonExpression"/> class representing the unary comparison expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitWhereBinaryComparisonExpression(Codeless.SharePoint.CamlWhereBinaryComparisonExpression)">
+            <summary>
+            Called when visiting a binary comparison expression inside a &lt;Where/&gt; element.
+            </summary>
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlWhereBinaryComparisonExpression"/> class representing the binary comparison expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitWhereLogicalExpression(Codeless.SharePoint.CamlWhereLogicalExpression)">
+            <summary>
+            Called when visiting a logical comparison expression inside a &lt;Where/&gt; element.
+            </summary>
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlWhereLogicalExpression"/> class representing the logical comparison expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitWhereExpression(Codeless.SharePoint.CamlWhereExpression)">
+            <summary>
+            Called when visiting a &lt;Where/&gt; expression.
+            </summary>
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlWhereExpression"/> class representing the &lt;Where/&gt; expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.CamlExpressionVisitor.VisitQueryExpression(Codeless.SharePoint.CamlQueryExpression)">
+            <summary>
+            Called when visiting a &lt;Query/&gt; expression.
+            </summary>
+            <param name="expression">An instance of the <see cref="T:Codeless.SharePoint.CamlQueryExpression"/> class representing the &lt;Query/&gt; expression.</param>
+            <returns>When overriden, returns an expression to replace the expression given in arguments.</returns>
+        </member>
+        <member name="T:Codeless.SharePoint.CamlParameterBinding`1">
+            <summary>
+            Provides a base class representating a parameter in a CAML expression.
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
         <member name="T:Codeless.SharePoint.CamlParameterName">
             <summary>
             Indicates the name of a parameter which its value can be binded after.
@@ -222,6 +350,16 @@
             Exposes properties and methods related to a parameter in a CAML expression.
             </summary>
         </member>
+        <member name="P:Codeless.SharePoint.ICamlParameterBinding.IsParameter">
+            <summary>
+            Gets a boolean value indicating whether this instance binds to any given arguments.
+            </summary>
+        </member>
+        <member name="P:Codeless.SharePoint.ICamlParameterBinding.ParameterName">
+            <summary>
+            Gets the name of this parameter. <see cref="F:Codeless.SharePoint.CamlParameterName.NoBinding"/> is returned if this instance does not bind to any given arguments.
+            </summary>
+        </member>
         <member name="P:Codeless.SharePoint.ICamlParameterBinding.ValueType">
             <summary>
             Gets the value type this parameter representing.
@@ -241,11 +379,20 @@
             <param name="bindings"></param>
             <returns></returns>
         </member>
-        <member name="T:Codeless.SharePoint.CamlParameterBinding`1">
+        <member name="T:Codeless.SharePoint.ISPObjectContext">
             <summary>
-            Provides a base class representating a parameter in a CAML expression.
+            Represents data source of SharePoint objects.
             </summary>
-            <typeparam name="T"></typeparam>
+        </member>
+        <member name="P:Codeless.SharePoint.ISPObjectContext.Site">
+            <summary>
+            Gets the site collection where persisted SharePoint objects to be retrieved from.
+            </summary>
+        </member>
+        <member name="P:Codeless.SharePoint.ISPObjectContext.TermStore">
+            <summary>
+            Gets the term store where persisted objects of the Managed Metadata Service to be retrieved from.
+            </summary>
         </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelEventHandler`1.OnAdding(`0,Codeless.SharePoint.ObjectModel.SPModelEventArgs)">
             <summary>
@@ -368,6 +515,11 @@
             Gets the server-relative path of the list item associated with an <see cref="T:Codeless.SharePoint.ObjectModel.SPModel"/> instance, without starting slash.
             </summary>
         </member>
+        <member name="P:Codeless.SharePoint.ObjectModel.ISPModelMetaData.ServerRelativeUrl">
+            <summary>
+            Gets the server-relative path of the list item associated with an <see cref="T:Codeless.SharePoint.ObjectModel.SPModel"/> instance, with starting slash.
+            </summary>
+        </member>
         <member name="P:Codeless.SharePoint.ObjectModel.ISPModelMetaData.SiteId">
             <summary>
             Gets the parent site collection ID of the list item associated with an <see cref="T:Codeless.SharePoint.ObjectModel.SPModel"/> instance.
@@ -384,6 +536,11 @@
             </summary>
         </member>
         <member name="P:Codeless.SharePoint.ObjectModel.ISPModelMetaData.FileLeafRef">
+            <summary>
+            Gets the filename of the list item associated with an <see cref="T:Codeless.SharePoint.ObjectModel.SPModel"/> instance.
+            </summary>
+        </member>
+        <member name="P:Codeless.SharePoint.ObjectModel.ISPModelMetaData.Filename">
             <summary>
             Gets the filename of the list item associated with an <see cref="T:Codeless.SharePoint.ObjectModel.SPModel"/> instance.
             </summary>
@@ -644,6 +801,14 @@
             <param name="version">Version number.</param>
             <returns>A read-only model object of type <typeparamref name="T"/> if the specified version or *null* if such version does not exist.</returns>
         </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelExtension.GetVersions``1(``0)">
+            <summary>
+            Gets all versions of the list item.
+            </summary>
+            <typeparam name="T">Type of model.</typeparam>
+            <param name="model">A model object representing the list item.</param>
+            <returns>A enumerable collection containing read-only model objects of type <typeparamref name="T"/> representing different versions of the list item.</returns>
+        </member>
         <member name="T:Codeless.SharePoint.ObjectModel.SPOption">
             <summary>
             Specifies the value when provisioning a <see cref="T:System.Boolean"/> property.
@@ -698,6 +863,15 @@
             </summary>
             <param name="query">CAML query expression.</param>
             <param name="limit">Maximum number of items to be returned.</param>
+            <returns>A collection containing the returned items.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.ISPModelManager.GetItems(Codeless.SharePoint.CamlExpression,System.UInt32,System.UInt32)">
+            <summary>
+            Gets items of the associated content type(s) that satisfy the condition.
+            </summary>
+            <param name="query">CAML query expression.</param>
+            <param name="limit">Maximum number of items to be returned.</param>
+            <param name="startRow">Number of items to skip from start.</param>
             <returns>A collection containing the returned items.</returns>
         </member>
         <member name="M:Codeless.SharePoint.ObjectModel.ISPModelManager.GetItems(Codeless.SharePoint.CamlExpression,System.UInt32,System.String[],Microsoft.Office.Server.Search.Query.KeywordInclusion)">
@@ -762,6 +936,12 @@
             <param name="filename">File or folder name.</param>
             <returns>An item of the specified content type.</returns>
         </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.ISPModelManager.Recycle(System.Object)">
+            <summary>
+            Moves the specified item to recycle bin.
+            </summary>
+            <param name="model">An item to be recycled.</param>
+        </member>
         <member name="M:Codeless.SharePoint.ObjectModel.ISPModelManager.Delete(System.Object)">
             <summary>
             Deletes the specified item from a list. 
@@ -779,18 +959,56 @@
             </summary>
             <param name="item">An item with changes to be persisted.</param>
         </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.ISPModelManager.CommitChanges(Codeless.SharePoint.ObjectModel.SPModelCommitMode)">
+            <summary>
+            Commits changes made to model class instances fetched from this manager with the specified commit option.
+            </summary>
+            <param name="mode">An value of <see cref="T:Codeless.SharePoint.ObjectModel.SPModelCommitMode" /> representing how a list item is updated.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.ISPModelManager.CommitChanges(System.Object,Codeless.SharePoint.ObjectModel.SPModelCommitMode)">
+            <summary>
+            Commits changes made to the specified model class instances with the specified commit option.
+            </summary>
+            <param name="item">An item with changes to be persisted.</param>
+            <param name="mode">An value of <see cref="T:Codeless.SharePoint.ObjectModel.SPModelCommitMode" /> representing how a list item is updated.</param>
+        </member>
         <member name="T:Codeless.SharePoint.ObjectModel.SPModelManager`1">
             <summary>
             Provides a generic implementation of <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1"/>.
             </summary>
             <typeparam name="T">Type of model class.</typeparam>
         </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.#ctor(Microsoft.SharePoint.SPSite)">
+            <summary>
+            Initializes an instance of the <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManager`1"/> class that queries list items under the specified site collection and its sub-sites.
+            </summary>
+            <param name="site">The site collection object to query against.</param>
+        </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.#ctor(Microsoft.SharePoint.SPWeb)">
             <summary>
-            Creates an instance of <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManager`1"/> with the specified site. 
-            Items under the specified site and its descendant sites can be queried.
+            Initializes an instance of the <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManager`1"/> class that queries list items under the specified site and its sub-sites.
             </summary>
             <param name="web">Site object.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.#ctor(Microsoft.SharePoint.SPWeb,System.Boolean)">
+            <summary>
+            Initializes an instance of the <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManager`1"/> class that queries list items under the specified site and optionally its sub-sites.
+            </summary>
+            <param name="web">The site object to query against.</param>
+            <param name="currentWebOnly">A boolean value specifies whether lists in sub-sites should also be queried.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.#ctor(Microsoft.SharePoint.SPList)">
+            <summary>
+            Initializes an instance of the <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManager`1"/> class that queries list items under the specified list.
+            </summary>
+            <param name="list">The list object to query against.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.#ctor(Microsoft.SharePoint.SPWeb,System.Collections.Generic.IList{Microsoft.SharePoint.SPList})">
+            <summary>
+            Initializes an instance of the <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManager`1"/> class that queries list items under the specified list(s).
+            </summary>
+            <param name="web">The site object.</param>
+            <param name="lists">A List of lists to query against.</param>
         </member>
         <member name="P:Codeless.SharePoint.ObjectModel.SPModelManager`1.Current">
             <summary>
@@ -855,6 +1073,16 @@
             <typeparam name="TItem">Item type.</typeparam>
             <param name="query">CAML query expression.</param>
             <param name="limit">Maximum number of items to be returned.</param>
+            <returns>A collection containing the returned items.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.GetItems``1(Codeless.SharePoint.CamlExpression,System.UInt32,System.UInt32)">
+            <summary>
+            Gets items of the associated content type(s) that satisfy the condition.
+            </summary>
+            <typeparam name="TItem">Item type.</typeparam>
+            <param name="query">CAML query expression.</param>
+            <param name="limit">Maximum number of items to be returned.</param>
+            <param name="startRow">Number of items to skip from start.</param>
             <returns>A collection containing the returned items.</returns>
         </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.GetItems``1(Codeless.SharePoint.CamlExpression,System.UInt32,System.String[],Microsoft.Office.Server.Search.Query.KeywordInclusion)">
@@ -986,7 +1214,7 @@
         </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.CommitChanges">
             <summary>
-            Commits changes made to model class instances fetched fromt this manager.
+            Commits changes made to model class instances fetched from this manager.
             </summary>
         </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.CommitChanges(`0)">
@@ -994,6 +1222,34 @@
             Commits changes made to the specified model class instances.
             </summary>
             <param name="item">An item with changes to be persisted.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.CommitChanges(Codeless.SharePoint.ObjectModel.SPModelCommitMode)">
+            <summary>
+            Commits changes made to model class instances fetched from this manager with the specified commit option.
+            </summary>
+            <param name="mode">An value of <see cref="T:Codeless.SharePoint.ObjectModel.SPModelCommitMode" /> representing how a list item is updated.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.CommitChanges(`0,Codeless.SharePoint.ObjectModel.SPModelCommitMode)">
+            <summary>
+            Commits changes made to the specified model class instances with the specified commit option.
+            </summary>
+            <param name="item">An item with changes to be persisted.</param>
+            <param name="mode">An value of <see cref="T:Codeless.SharePoint.ObjectModel.SPModelCommitMode" /> representing how a list item is updated.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.ExecuteFileOperation(`0,Codeless.SharePoint.ObjectModel.SPModelFileOperation)">
+            <summary>
+            Executes specified operation on the file represented by the model object with no comment.
+            </summary>
+            <param name="item">An item which operation is being performed on.</param>
+            <param name="operation">The operation to be performed.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManager`1.ExecuteFileOperation(`0,Codeless.SharePoint.ObjectModel.SPModelFileOperation,System.String)">
+            <summary>
+            Executes specified operation on the file represented by the model object with the specified comment.
+            </summary>
+            <param name="item">An item which operation is being performed on.</param>
+            <param name="operation">The operation to be performed.</param>
+            <param name="comment">A string that contains a comment about the operation. It is ignored for some oeprations.</param>
         </member>
         <member name="T:Codeless.SharePoint.ObjectModel.SPModelEventType">
             <summary>
@@ -1393,6 +1649,17 @@
             <param name="contextWeb">A site object.</param>
             <returns>A manager object.</returns>
         </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModel.GetDefaultManager(System.Type,Microsoft.SharePoint.SPWeb,Codeless.SharePoint.SPObjectCache)">
+            <summary>
+            Gets the default manager instantiated with the specified site and an existing SharePoint object cache.
+            Actual type of the created manager can be set through <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManagerDefaultTypeAttribute"/> on the model type.
+            If there is no <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManagerDefaultTypeAttribute"/> specified, an <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManager`1"/> object is instantiated with <paramref name="type"/>.
+            </summary>
+            <param name="type">Model type.</param>
+            <param name="contextWeb">A site object.</param>
+            <param name="cache">An instance of SharePoint object cache.</param>
+            <returns>A manager object.</returns>
+        </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModel.EnumerateLists(System.Type,Microsoft.SharePoint.SPWeb)">
             <summary>
             Gets all lists under the specified site and all its descendant sites which contains the content type associated with the model type.
@@ -1423,6 +1690,14 @@
             Creates a model object representing the list item.
             </summary>
             <param name="adapter">A data access adapter of the list item.</param>
+            <returns>A model object or *null* if there is no types associated with the content type of the list item.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModel.TryCreate(Codeless.SharePoint.ISPListItemAdapter,Codeless.SharePoint.ObjectModel.ISPModelManager)">
+            <summary>
+            Creates a model object representing the list item.
+            </summary>
+            <param name="adapter">A data access adapter of the list item.</param>
+            <param name="manager">An instance of the <see cref="T:Codeless.SharePoint.ObjectModel.ISPModelManager"/> class which model object created will belongs to this manager.</param>
             <returns>A model object or *null* if there is no types associated with the content type of the list item.</returns>
         </member>
         <member name="T:Codeless.SharePoint.ObjectModel.SPModelCollection">
@@ -1595,6 +1870,86 @@
             Queries will be performed using FAST search infrastructure.
             </summary>
         </member>
+        <member name="T:Codeless.SharePoint.ObjectModel.SPModelCommitMode">
+            <summary>
+            Specifies how a list item is saved when committing changes.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelCommitMode.Default">
+            <summary>
+            The list item is updated by creating a new version of the item.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelCommitMode.SystemUpdate">
+            <summary>
+            The list item is updated without effecting changes in the Modified or Modified By fields.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelCommitMode.SystemUpdateOverwriteVersion">
+            <summary>
+            The list item is updated without effecting changes in the Modified or Modified By fields, and without creating another version of the item.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelCommitMode.OverwriteVersion">
+            <summary>
+            The list item is updated without creating another version of the item.
+            </summary>
+        </member>
+        <member name="T:Codeless.SharePoint.ObjectModel.SPModelFileOperation">
+            <summary>
+            Specifies operation to be done on a file in a SharePoint web site.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelFileOperation.MinorCheckIn">
+            <summary>
+            Checks in the file to a document library and increments as a minor version.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelFileOperation.MajorCheckIn">
+            <summary>
+            Checks in the file to a document library and increments as a major version.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelFileOperation.OverwriteCheckIn">
+            <summary>
+            Checks in the file to a document library and overwrite the file.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelFileOperation.CheckOut">
+            <summary>
+            Checks the file out of a document library.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelFileOperation.UndoCheckOut">
+            <summary>
+            Undoes the file checkout.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelFileOperation.Publish">
+            <summary>
+            Submits the file for content approval.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelFileOperation.UnPublish">
+            <summary>
+            Removes the file from content approval.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelFileOperation.Approve">
+            <summary>
+            Approves the file submitted for content approval.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelFileOperation.Deny">
+            <summary>
+            Denies approval for a file that was submitted for content approval.
+            </summary>
+        </member>
+        <member name="F:Codeless.SharePoint.ObjectModel.SPModelFileOperation.TakeOffline">
+            <summary>
+            Takes the most current approved or major version of the file offline.
+            </summary>
+        </member>
         <member name="T:Codeless.SharePoint.ObjectModel.SPModelListQueryEventArgs">
             <summary>
             Provides data when an ExecutingListQuery event is triggered from <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1"/>.
@@ -1634,11 +1989,24 @@
             </summary>
             <typeparam name="T"></typeparam>
         </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.#ctor(Microsoft.SharePoint.SPSite)">
+            <summary>
+            Initializes an instance of the <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1"/> class that queries list items under the specified site collection and its sub-sites.
+            </summary>
+            <param name="site">The site collection object to query against.</param>
+        </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.#ctor(Microsoft.SharePoint.SPWeb)">
             <summary>
             Initializes an instance of the <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1"/> class that queries list items under the specified site and its sub-sites.
             </summary>
             <param name="web">The site object to query against.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.#ctor(Microsoft.SharePoint.SPWeb,System.Boolean)">
+            <summary>
+            Initializes an instance of the <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1"/> class that queries list items under the specified site and optionally its sub-sites.
+            </summary>
+            <param name="web">The site object to query against.</param>
+            <param name="currentWebOnly">A boolean value specifies whether lists in sub-sites should also be queried.</param>
         </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.#ctor(Microsoft.SharePoint.SPList)">
             <summary>
@@ -1673,6 +2041,11 @@
             Gets the query mode when calling overloads of <see cref="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.GetItems``1"/> or <see cref="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.GetItems``1"/> which does not perform keyword search explicitly.
             </summary>
         </member>
+        <member name="P:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.Culture">
+            <summary>
+            Gets the working culture of this manager.
+            </summary>
+        </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.GetItems``1">
             <summary>
             Gets items of the associated content type(s).
@@ -1695,6 +2068,16 @@
             <typeparam name="TItem">Item type.</typeparam>
             <param name="query">CAML query expression.</param>
             <param name="limit">Maximum number of items to be returned.</param>
+            <returns>A collection containing the returned items.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.GetItems``1(Codeless.SharePoint.CamlExpression,System.UInt32,System.UInt32)">
+            <summary>
+            Gets items of the associated content type(s) that satisfy the condition.
+            </summary>
+            <typeparam name="TItem">Item type.</typeparam>
+            <param name="query">CAML query expression.</param>
+            <param name="limit">Maximum number of items to be returned.</param>
+            <param name="startRow">Number of items to skip from start.</param>
             <returns>A collection containing the returned items.</returns>
         </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.GetItems``1(Codeless.SharePoint.CamlExpression,System.UInt32,System.String[],Microsoft.Office.Server.Search.Query.KeywordInclusion)">
@@ -1797,7 +2180,7 @@
         </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.CommitChanges">
             <summary>
-            Commits changes made to model class instances fetched fromt this manager.
+            Commits changes made to model class instances fetched from this manager.
             </summary>
         </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.CommitChanges(`0)">
@@ -1805,6 +2188,35 @@
             Commits changes made to the specified model class instances.
             </summary>
             <param name="item">An item with changes to be persisted.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.CommitChanges(Codeless.SharePoint.ObjectModel.SPModelCommitMode)">
+            <summary>
+            Commits changes made to model class instances fetched from this manager with the specified commit option.
+            </summary>
+            <param name="mode">An value of <see cref="T:Codeless.SharePoint.ObjectModel.SPModelCommitMode"/> representing how a list item is updated.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.CommitChanges(`0,Codeless.SharePoint.ObjectModel.SPModelCommitMode)">
+            <summary>
+            Commits changes made to the specified model class instances with the specified commit option.
+            </summary>
+            <param name="item">An item with changes to be persisted.</param>
+            <param name="mode">An value of <see cref="T:Codeless.SharePoint.ObjectModel.SPModelCommitMode"/> representing how a list item is updated.</param>
+            <exception cref="T:System.ArgumentException">Supplied item does not belongs to this manager - item</exception>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.ExecuteFileOperation(`0,Codeless.SharePoint.ObjectModel.SPModelFileOperation)">
+            <summary>
+            Executes specified operation on the file represented by the model object with no comment.
+            </summary>
+            <param name="item">An item which operation is being performed on.</param>
+            <param name="operation">The operation to be performed.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.ExecuteFileOperation(`0,Codeless.SharePoint.ObjectModel.SPModelFileOperation,System.String)">
+            <summary>
+            Executes specified operation on the file represented by the model object with the specified comment.
+            </summary>
+            <param name="item">An item which operation is being performed on.</param>
+            <param name="operation">The operation to be performed.</param>
+            <param name="comment">A string that contains a comment about the operation. It is ignored for some oeprations.</param>
         </member>
         <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.TryCreateModel(Codeless.SharePoint.ISPListItemAdapter,System.Boolean)">
             <summary>
@@ -1832,6 +2244,13 @@
             Called when a keyword search is being executed against Office search service.
             </summary>
             <param name="e"></param>
+        </member>
+        <member name="M:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.GetTermStoreForContext(Microsoft.SharePoint.SPWeb)">
+            <summary>
+            Returns the default term store connected with the site that initialized this instance of the <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1"/> class.
+            </summary>
+            <param name="web">The site that initialized this instance of the <see cref="T:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1"/> class.</param>
+            <returns>An instance of the <see cref="P:Codeless.SharePoint.ObjectModel.SPModelManagerBase`1.TermStore"/> class representing a connected term store.</returns>
         </member>
         <member name="T:Codeless.SharePoint.ObjectModel.SPModelProvisionException">
             <summary>
@@ -1905,6 +2324,11 @@
         <member name="P:Codeless.SharePoint.ObjectModel.SPContentTypeAttribute.Hidden">
             <summary>
             Gets or sets whether the associated content type is hidden. See <see cref="P:Microsoft.SharePoint.SPContentType.Hidden"/> for details.
+            </summary>
+        </member>
+        <member name="P:Codeless.SharePoint.ObjectModel.SPContentTypeAttribute.HiddenInList">
+            <summary>
+            Gets or sets whether the content type is hidden in the "New Item" menu.
             </summary>
         </member>
         <member name="P:Codeless.SharePoint.ObjectModel.SPContentTypeAttribute.ExternalContentType">
@@ -2729,6 +3153,11 @@
         <member name="P:Codeless.SharePoint.ObjectModel.SPListAttribute.DefaultViewQuery">
             <summary>
             Gets or sets the query expression of the default view of the list.
+            </summary>
+        </member>
+        <member name="P:Codeless.SharePoint.ObjectModel.SPListAttribute.Hidden">
+            <summary>
+            Gets or sets whether the list is hidden.
             </summary>
         </member>
         <member name="P:Codeless.SharePoint.ObjectModel.SPListAttribute.EnableAttachments">
@@ -3862,6 +4291,13 @@
             <param name="contextSite">Site collection. All objects will be fetched on this site collection instance.</param>
             <exception cref="T:System.ArgumentNullException">Throws when input parameter <paramref name="contextSite"/> is null.</exception>
         </member>
+        <member name="P:Codeless.SharePoint.SPObjectCache.Item(System.String)">
+            <summary>
+            Gets or sets object associated with a specified key in the cache.
+            </summary>
+            <param name="key">A string representing the key associated with a cached object.</param>
+            <returns>The cached object associated with the specified key; -or- *null* if the specified key does not exist in the cache.</returns>
+        </member>
         <member name="M:Codeless.SharePoint.SPObjectCache.GetObjects``1">
             <summary>
             Gets a enumerable collection of cached objects of type <typeparamref name="T"/>.
@@ -3951,6 +4387,15 @@
             <param name="fieldId">Field GUID.</param>
             <returns>An <see cref="T:Microsoft.SharePoint.SPField"/> object in cache. NULL if list column of given GUID does not exist, or specified list does not exist.</returns>
         </member>
+        <member name="M:Codeless.SharePoint.SPObjectCache.GetField(System.Guid,System.Guid,System.String)">
+            <summary>
+            Gets an <see cref="T:Microsoft.SharePoint.SPField"/> object representing list column of the specified internal name, under the specified list.
+            </summary>
+            <param name="webId">Site GUID.</param>
+            <param name="listId">List GUID.</param>
+            <param name="internalName">Internal name of the list column</param>
+            <returns>An <see cref="T:Microsoft.SharePoint.SPField"/> object in cache. NULL if list column of given internal name does not exist, or specified list does not exist.</returns>
+        </member>
         <member name="M:Codeless.SharePoint.SPObjectCache.TryGetField(System.String)">
             <summary>
             Get an <see cref="T:Microsoft.SharePoint.SPField"/> object representing site column of the specified internal name.
@@ -3990,6 +4435,20 @@
             <param name="view">View object.</param>
             <returns>An <see cref="T:Microsoft.SharePoint.SPView"/> object in cache. Returned object is not necessary the same instance as the given one.</returns>
             <exception cref="T:System.ArgumentNullException">Throws when input parameter <paramref name="view"/> is null.</exception>
+        </member>
+        <member name="M:Codeless.SharePoint.SPObjectCache.RequestReusableAcl(System.Guid)">
+            <summary>
+            Requests an <see cref="T:Microsoft.SharePoint.SPReusableAcl"/> object representing ACL information of the specified scope ID in advance.
+            If the requested object has not been loaded, it will be loaded in batch in the next time <see cref="M:Codeless.SharePoint.SPObjectCache.GetReusableAcl(System.Guid)"/> is called.
+            </summary>
+            <param name="scopeId">Scope ID.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.SPObjectCache.GetReusableAcl(System.Guid)">
+            <summary>
+            Gets an <see cref="T:Microsoft.SharePoint.SPReusableAcl"/> object representing ACL information of the specified scope ID.
+            </summary>
+            <param name="scopeId">Scope ID.</param>
+            <returns>An <see cref="T:Microsoft.SharePoint.SPReusableAcl"/> object in cache. NULL if the specified scope ID does not exist in the site collection.</returns>
         </member>
         <member name="T:Codeless.SharePoint.SPRecurrenceDateRange">
             <summary>
@@ -4367,6 +4826,20 @@
         <member name="M:Codeless.SharePoint.Caml.Parameter.Order(System.String)">
             <summary>
             Creates a parameter binding to a sorting direction within a CAML expression.
+            </summary>
+            <param name="parameterName">Unique name to identify this parameter when binding values.</param>
+            <returns>A parameter binding which can be supplied to expression building methods.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.Caml.Parameter.BooleanString(System.String)">
+            <summary>
+            Creates a parameter binding to a boolean string "TRUE" or "FALSE".
+            </summary>
+            <param name="parameterName">Unique name to identify this parameter when binding values.</param>
+            <returns>A parameter binding which can be supplied to expression building methods.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.Caml.Parameter.Boolean(System.String)">
+            <summary>
+            Creates a parameter binding to a boolean value.
             </summary>
             <param name="parameterName">Unique name to identify this parameter when binding values.</param>
             <returns>A parameter binding which can be supplied to expression building methods.</returns>
@@ -5675,6 +6148,62 @@
             <param name="securableObject">SPSecurableObject.</param>
             <param name="codeToRun">Action to run.</param>
         </member>
+        <member name="M:Codeless.SharePoint.SPExtension.WithUser(Microsoft.SharePoint.SPSite,Microsoft.SharePoint.SPUser,System.Action{Microsoft.SharePoint.SPSite})">
+            <summary>
+            Performs operation on the site collection with the specified account.
+            </summary>
+            <param name="site">A site collection object.</param>
+            <param name="user">A user object that represents the account who operations are performed as.</param>
+            <param name="codeToRun">Action to run.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.WithUser(Microsoft.SharePoint.SPWeb,Microsoft.SharePoint.SPUser,System.Action{Microsoft.SharePoint.SPWeb})">
+            <summary>
+            Performs operation on the site with the specified account.
+            </summary>
+            <param name="web">A site object.</param>
+            <param name="user">A user object that represents the account who operations are performed as.</param>
+            <param name="codeToRun">Action to run.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.WithUser(Microsoft.SharePoint.SPList,Microsoft.SharePoint.SPUser,System.Action{Microsoft.SharePoint.SPList})">
+            <summary>
+            Performs operation on the list with the specified account.
+            </summary>
+            <param name="list">A list object.</param>
+            <param name="user">A user object that represents the account who operations are performed as.</param>
+            <param name="codeToRun">Action to run.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.WithUser(Microsoft.SharePoint.SPListItem,Microsoft.SharePoint.SPUser,System.Action{Microsoft.SharePoint.SPListItem})">
+            <summary>
+            Performs operation on the list item with the specified account.
+            </summary>
+            <param name="listItem">A list item object.</param>
+            <param name="user">A user object that represents the account who operations are performed as.</param>
+            <param name="codeToRun">Action to run.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.WithUser(Microsoft.SharePoint.SPFolder,Microsoft.SharePoint.SPUser,System.Action{Microsoft.SharePoint.SPFolder})">
+            <summary>
+            Performs operation on the folder with the specified account.
+            </summary>
+            <param name="folder">A folder objet.</param>
+            <param name="user">A user object that represents the account who operations are performed as.</param>
+            <param name="codeToRun">Action to run.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.WithUser(Microsoft.SharePoint.SPFile,Microsoft.SharePoint.SPUser,System.Action{Microsoft.SharePoint.SPFile})">
+            <summary>
+            Performs operation on the file with the specified account.
+            </summary>
+            <param name="file">A file objet.</param>
+            <param name="user">A user object that represents the account who operations are performed as.</param>
+            <param name="codeToRun">Action to run.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.WithUser(Microsoft.SharePoint.SPSecurableObject,Microsoft.SharePoint.SPUser,System.Action{Microsoft.SharePoint.SPSecurableObject})">
+            <summary>
+            Performs operation on the secureable object with the specified account.
+            </summary>
+            <param name="securableObject">SPSecurableObject.</param>
+            <param name="user">A user object that represents the account who operations are performed as.</param>
+            <param name="codeToRun">Action to run.</param>
+        </member>
         <member name="M:Codeless.SharePoint.SPExtension.TryGetWebForCurrentUser(Microsoft.SharePoint.SPSite,System.Guid)">
             <summary>
             Finds a descendant site of the specified ID.
@@ -5753,6 +6282,15 @@
             <param name="contentTypeId">Content type ID.</param>
             <returns>*true* if the specified list contains the content type.</returns>
         </member>
+        <member name="M:Codeless.SharePoint.SPExtension.GetListSafe(Microsoft.SharePoint.SPWeb,System.String)">
+            <summary>
+            Returns the list that is associated with the specified site-relative URL.
+            </summary>
+            <param name="web">A site object.</param>
+            <param name="strUrl">A string that contains the site-relative URL for a list.</param>
+            <remarks>This method caters unexpected <see cref="T:System.Runtime.InteropServices.COMException"/> with native error code 0x80004005.</remarks>
+            <returns>An <see cref="T:Microsoft.SharePoint.SPList"/> object that represents the list.</returns>
+        </member>
         <member name="M:Codeless.SharePoint.SPExtension.EnsureListByUrl(Microsoft.SharePoint.SPWeb,System.String,System.String,Microsoft.SharePoint.SPListTemplateType)">
             <summary>
             Creates a list under the specified site if no list exists at the given URL.
@@ -5802,11 +6340,25 @@
             </summary>
             <param name="item">A list item.</param>
         </member>
+        <member name="M:Codeless.SharePoint.SPExtension.EnsureApproved(Microsoft.SharePoint.SPListItem,System.String)">
+            <summary>
+            Ensures the specified list item are approved. If the list item is under list folders, all parent folders are also approved.
+            </summary>
+            <param name="item">A list item.</param>
+            <param name="comment">Comment message.</param>
+        </member>
         <member name="M:Codeless.SharePoint.SPExtension.EnsureApproved(Microsoft.SharePoint.SPFolder)">
             <summary>
             Ensures the specified folder and all parent folders are approved.
             </summary>
             <param name="folder">An <see cref="T:Microsoft.SharePoint.SPFolder"/> object.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.EnsureApproved(Microsoft.SharePoint.SPFolder,System.String)">
+            <summary>
+            Ensures the specified folder and all parent folders are approved.
+            </summary>
+            <param name="folder">An <see cref="T:Microsoft.SharePoint.SPFolder"/> object.</param>
+            <param name="comment">Comment message.</param>
         </member>
         <member name="M:Codeless.SharePoint.SPExtension.EnsurePublished(Microsoft.SharePoint.SPFile,System.String)">
             <summary>
@@ -5821,6 +6373,15 @@
             </summary>
             <param name="file">An <see cref="T:Microsoft.SharePoint.SPFile"/> object.</param>
             <param name="publishOnDispose">Whether to publish the file on dispose.</param>
+            <returns>An <see cref="T:System.IDisposable"/> object.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.GetCheckOutScope(Microsoft.SharePoint.SPFile,System.Boolean,System.String)">
+            <summary>
+            Ensures the specified file is checked out to the current user before performing edit operation, and optionally publish the file on dispose.
+            </summary>
+            <param name="file">An <see cref="T:Microsoft.SharePoint.SPFile"/> object.</param>
+            <param name="publishOnDispose">Whether to publish the file on dispose.</param>
+            <param name="checkInComment">Comment message.</param>
             <returns>An <see cref="T:System.IDisposable"/> object.</returns>
         </member>
         <member name="M:Codeless.SharePoint.SPExtension.EnableScheduledPublishing(Microsoft.SharePoint.SPList)">
@@ -5878,6 +6439,30 @@
             <param name="contentType">Content type object.</param>
             <param name="workflowBaseId">The GUID of a workflow.</param>
             <returns>The workflow association object that associates the specified workflow and the given content type.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.StartWorkflow(Microsoft.SharePoint.SPListItem,System.Guid,System.String)">
+            <summary>
+            Starts the specified workflow on the list item that is associated to the parent list.
+            </summary>
+            <param name="listItem">A list item to start workflow with.</param>
+            <param name="workflowBaseId">A GUID specifying the workflow.</param>
+            <param name="data">A string containing custom data.</param>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.GetActiveWorkflow(Microsoft.SharePoint.SPListItem,System.Guid)">
+            <summary>
+            Gets a running workflow instance of the specified workflow associated with the list item.
+            </summary>
+            <param name="listItem">A list item.</param>
+            <param name="workflowBaseId">A GUID specifying the workflow.</param>
+            <returns>A instance of the <see cref="T:Microsoft.SharePoint.Workflow.SPWorkflow"/> type that represents the workflow; -or- *null* if there is no running instance of the specified workflow.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.GetSiteMemberByID(Microsoft.SharePoint.SPWeb,System.Int32)">
+            <summary>
+            Gets the user or group with the specified member ID.
+            </summary>
+            <param name="web">Site object.</param>
+            <param name="id">Member ID.</param>
+            <returns>A <see cref="T:Microsoft.SharePoint.SPPrincipal"/> object that represents either the specified user or group; -or- *null* if there is no member with the specified member ID.</returns>
         </member>
         <member name="M:Codeless.SharePoint.SPExtension.EnsureGroup(Microsoft.SharePoint.SPWeb,System.String)">
             <summary>
@@ -5960,6 +6545,14 @@
             </summary>
             <param name="assignment">Role assignment object.</param>
             <returns>Permission granted by the given role assignment.</returns>
+        </member>
+        <member name="M:Codeless.SharePoint.SPExtension.GetMembersWithPermissions(Microsoft.SharePoint.SPSecurableObject,Microsoft.SharePoint.SPBasePermissions)">
+            <summary>
+            Gets a collection of users or groups that are granted the specified permissions on the specified securable object.
+            </summary>
+            <param name="obj">Securable object.</param>
+            <param name="permissions">A bitmask value representing required permissions.</param>
+            <returns>A enumerable collection of users or groups that are granted the specified permissions.</returns>
         </member>
         <member name="M:Codeless.SharePoint.SPExtension.IsMembershipOfCurrentUser(Microsoft.SharePoint.SPPrincipal)">
             <summary>
