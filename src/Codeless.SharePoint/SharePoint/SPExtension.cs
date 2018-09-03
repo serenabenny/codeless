@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Web;
 using System.Xml;
 using Group = Microsoft.SharePoint.Taxonomy.Group;
 
@@ -152,6 +153,9 @@ namespace Codeless.SharePoint {
     /// <param name="codeToRun">Action to run.</param>
     public static void WithElevatedPrivileges(this SPSite site, Action<SPSite> codeToRun) {
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (SPSite elevatedSite = new SPSite(site.ID, SPUserToken.SystemAccount)) {
         using (elevatedSite.GetAllowUnsafeUpdatesScope()) {
           using (elevatedSite.RootWeb.GetAllowUnsafeUpdatesScope()) {
@@ -168,6 +172,9 @@ namespace Codeless.SharePoint {
     /// <param name="codeToRun">Action to run.</param>
     public static void WithElevatedPrivileges(this SPWeb web, Action<SPWeb> codeToRun) {
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (SPSite elevatedSite = new SPSite(web.Site.ID, SPUserToken.SystemAccount)) {
         using (SPWeb elevatedWeb = elevatedSite.OpenWeb(web.ID)) {
           using (elevatedWeb.GetAllowUnsafeUpdatesScope()) {
@@ -184,6 +191,9 @@ namespace Codeless.SharePoint {
     /// <param name="codeToRun">Action to run.</param>
     public static void WithElevatedPrivileges(this SPList list, Action<SPList> codeToRun) {
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (SPSite elevatedSite = new SPSite(list.ParentWeb.Site.ID, SPUserToken.SystemAccount)) {
         using (SPWeb elevatedWeb = elevatedSite.OpenWeb(list.ParentWeb.ID)) {
           using (elevatedWeb.GetAllowUnsafeUpdatesScope()) {
@@ -201,6 +211,9 @@ namespace Codeless.SharePoint {
     /// <param name="codeToRun">Action to run.</param>
     public static void WithElevatedPrivileges(this SPListItem listItem, Action<SPListItem> codeToRun) {
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (SPSite elevatedSite = new SPSite(listItem.Web.Site.ID, SPUserToken.SystemAccount)) {
         using (SPWeb elevatedWeb = elevatedSite.OpenWeb(listItem.Web.ID)) {
           using (elevatedWeb.GetAllowUnsafeUpdatesScope()) {
@@ -219,6 +232,9 @@ namespace Codeless.SharePoint {
     /// <param name="codeToRun">Action to run.</param>
     public static void WithElevatedPrivileges(this SPFolder folder, Action<SPFolder> codeToRun) {
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (SPSite elevatedSite = new SPSite(folder.ParentWeb.Site.ID, SPUserToken.SystemAccount)) {
         using (SPWeb elevatedWeb = elevatedSite.OpenWeb(folder.ParentWeb.ID)) {
           using (elevatedWeb.GetAllowUnsafeUpdatesScope()) {
@@ -236,6 +252,9 @@ namespace Codeless.SharePoint {
     /// <param name="codeToRun">Action to run.</param>
     public static void WithElevatedPrivileges(this SPFile file, Action<SPFile> codeToRun) {
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (SPSite elevatedSite = new SPSite(file.Web.Site.ID, SPUserToken.SystemAccount)) {
         using (SPWeb elevatedWeb = elevatedSite.OpenWeb(file.Web.ID)) {
           using (elevatedWeb.GetAllowUnsafeUpdatesScope()) {
@@ -273,6 +292,9 @@ namespace Codeless.SharePoint {
     public static void WithUser(this SPSite site, SPUser user, Action<SPSite> codeToRun) {
       CommonHelper.ConfirmNotNull(user, "user");
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (new SPSecurity.SuppressAccessDeniedRedirectInScope()) {
         using (SPSite elevatedSite = new SPSite(site.ID, user.UserToken)) {
           using (elevatedSite.GetAllowUnsafeUpdatesScope()) {
@@ -293,6 +315,9 @@ namespace Codeless.SharePoint {
     public static void WithUser(this SPWeb web, SPUser user, Action<SPWeb> codeToRun) {
       CommonHelper.ConfirmNotNull(user, "user");
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (new SPSecurity.SuppressAccessDeniedRedirectInScope()) {
         using (SPSite elevatedSite = new SPSite(web.Site.ID, user.UserToken)) {
           using (SPWeb elevatedWeb = elevatedSite.OpenWeb(web.ID)) {
@@ -313,6 +338,9 @@ namespace Codeless.SharePoint {
     public static void WithUser(this SPList list, SPUser user, Action<SPList> codeToRun) {
       CommonHelper.ConfirmNotNull(user, "user");
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (new SPSecurity.SuppressAccessDeniedRedirectInScope()) {
         using (SPSite elevatedSite = new SPSite(list.ParentWeb.Site.ID, user.UserToken)) {
           using (SPWeb elevatedWeb = elevatedSite.OpenWeb(list.ParentWeb.ID)) {
@@ -334,6 +362,9 @@ namespace Codeless.SharePoint {
     public static void WithUser(this SPListItem listItem, SPUser user, Action<SPListItem> codeToRun) {
       CommonHelper.ConfirmNotNull(user, "user");
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (new SPSecurity.SuppressAccessDeniedRedirectInScope()) {
         using (SPSite elevatedSite = new SPSite(listItem.Web.Site.ID, user.UserToken)) {
           using (SPWeb elevatedWeb = elevatedSite.OpenWeb(listItem.Web.ID)) {
@@ -356,6 +387,9 @@ namespace Codeless.SharePoint {
     public static void WithUser(this SPFolder folder, SPUser user, Action<SPFolder> codeToRun) {
       CommonHelper.ConfirmNotNull(user, "user");
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (new SPSecurity.SuppressAccessDeniedRedirectInScope()) {
         using (SPSite elevatedSite = new SPSite(folder.ParentWeb.Site.ID, user.UserToken)) {
           using (SPWeb elevatedWeb = elevatedSite.OpenWeb(folder.ParentWeb.ID)) {
@@ -377,6 +411,9 @@ namespace Codeless.SharePoint {
     public static void WithUser(this SPFile file, SPUser user, Action<SPFile> codeToRun) {
       CommonHelper.ConfirmNotNull(user, "user");
       CommonHelper.ConfirmNotNull(codeToRun, "codeToRun");
+      if (HttpContext.Current != null && HttpContext.Current.Request.Form["__REQUESTDIGEST"] != null) {
+        SPUtility.ValidateFormDigest();
+      }
       using (new SPSecurity.SuppressAccessDeniedRedirectInScope()) {
         using (SPSite elevatedSite = new SPSite(file.Web.Site.ID, user.UserToken)) {
           using (SPWeb elevatedWeb = elevatedSite.OpenWeb(file.Web.ID)) {
@@ -419,21 +456,12 @@ namespace Codeless.SharePoint {
       if (value.ID == webId) {
         return value;
       }
-      Stack<Guid> parentWebIds = new Stack<Guid>();
-      using (SPSite elevatedSite = new SPSite(site.ID, SPUserToken.SystemAccount)) {
-        using (SPWeb targetWeb = elevatedSite.OpenWeb(webId)) {
-          for (SPWeb web = targetWeb; web.ID != value.ID; web = web.ParentWeb) {
-            parentWebIds.Push(web.ID);
-          }
-        }
+      SPContext current = SPContext.Current;
+      if (current != null && site == current.Site) {
+        SPObjectCache objectCache = SPObjectCache.GetInstanceForCurrentContext();
+        return objectCache.GetWeb(webId);
       }
-      while (parentWebIds.Count > 0) {
-        value = value.GetSubWebByIDSafe(parentWebIds.Pop());
-        if (value == null) {
-          return null;
-        }
-      }
-      return value;
+      return SPExtensionHelper.OpenWebSafe(site, webId);
     }
 
     /// <summary>
@@ -634,6 +662,57 @@ namespace Codeless.SharePoint {
     }
 
     /// <summary>
+    /// Returns the file object located at the specified URL.
+    /// </summary>
+    /// <param name="web">A site.</param>
+    /// <param name="strUrl">A string that contains the URL for the file.</param>
+    /// <returns>An <see cref="Microsoft.SharePoint.SPFile"/> object that represents the file; -or- *null* if the file does not exists.</returns>
+    public static SPFile GetFileSafe(this SPWeb web, string strUrl) {
+      try {
+        SPFile file = web.GetFile(strUrl);
+        if (file.Exists) {
+          return file;
+        }
+      } catch (FileNotFoundException) { }
+      return null;
+    }
+
+    /// <summary>
+    /// Returns the folder object located at the specified URL.
+    /// </summary>
+    /// <param name="web">A site.</param>
+    /// <param name="strUrl">A string that contains the URL for the folder.</param>
+    /// <returns>An <see cref="Microsoft.SharePoint.SPFolder"/> object that represents the folder; -or- *null* if the folder does not exists.</returns>
+    public static SPFolder GetFolderSafe(this SPWeb web, string strUrl) {
+      try {
+        SPFolder folder = web.GetFolder(strUrl);
+        if (folder.Exists) {
+          return folder;
+        }
+      } catch (FileNotFoundException) { }
+      return null;
+
+    }
+
+    /// <summary>
+    /// Returns a file or folder on the Web site with the specified URL.
+    /// </summary>
+    /// <param name="web">A site.</param>
+    /// <param name="strUrl">A string that contains the URL of the file or folder.</param>
+    /// <returns>An <see cref="Microsoft.SharePoint.SPFile"/> or <see cref="Microsoft.SharePoint.SPFolder"/> object that represents the file or folder; -or- *null* if the file or folder does not exists.</returns>
+    public static object GetFileOrFolderObjectSafe(this SPWeb web, string strUrl) {
+      try {
+        object fileOrFolder = web.GetFileOrFolderObject(strUrl);
+        SPFile file = fileOrFolder as SPFile;
+        if (file == null || file.EffectiveRawPermissions.HasFlag(SPBasePermissions.OpenItems)) {
+          return fileOrFolder;
+        }
+      } catch (FileNotFoundException) {
+      } catch (DirectoryNotFoundException) { }
+      return null;
+    }
+
+    /// <summary>
     /// Gets an <see cref="SPFile"/> or <see cref="SPFolder"/> object at the specfied URL.
     /// </summary>
     /// <param name="site">A site collection.</param>
@@ -641,25 +720,27 @@ namespace Codeless.SharePoint {
     /// <returns>An <see cref="SPFile"/> or <see cref="SPFolder"/> object, or *null* if the specified URL does not exist.</returns>
     public static object GetFileOrFolder(this SPSite site, string strUrl) {
       CommonHelper.ConfirmNotNull(strUrl, "strUrl");
-      SPWeb currentWeb = site.RootWeb;
-      if (strUrl.StartsWith(currentWeb.ServerRelativeUrl, StringComparison.OrdinalIgnoreCase)) {
-        strUrl = strUrl.Substring(currentWeb.ServerRelativeUrl.Length).TrimStart('/');
-      } else if (strUrl.StartsWith(currentWeb.Url, StringComparison.OrdinalIgnoreCase)) {
-        strUrl = strUrl.Substring(currentWeb.Url.Length).TrimStart('/');
-      }
-      foreach (string segment in strUrl.Split('/')) {
-        SPWeb childWeb = currentWeb.GetSubWebByNameSafe(segment);
-        if (childWeb != null) {
-          currentWeb = childWeb;
+      SPWeb currentWeb;
+      if (strUrl.Length > 0 && !strUrl.StartsWith("/")) {
+        if (!strUrl.Contains("://")) {
+          strUrl = SPUrlUtility.CombineUrl(site.ServerRelativeUrl, strUrl);
+        } else if (strUrl.StartsWith(site.Url, StringComparison.OrdinalIgnoreCase)) {
+          strUrl = new Uri(strUrl).AbsolutePath;
         } else {
-          break;
+          return null;
         }
       }
-      try {
-        return currentWeb.GetFileOrFolderObject(SPUrlUtility.CombineUrl(site.ServerRelativeUrl, strUrl));
-      } catch (FileNotFoundException) {
-        return null;
+      SPContext current = SPContext.Current;
+      if (current != null && site == current.Site) {
+        SPObjectCache objectCache = SPObjectCache.GetInstanceForCurrentContext();
+        currentWeb = objectCache.TryGetWeb(strUrl);
+      } else {
+        currentWeb = SPExtensionHelper.OpenWebSafe(site, strUrl, false);
       }
+      if (currentWeb != null) {
+        return currentWeb.GetFileOrFolderObjectSafe(strUrl);
+      }
+      return null;
     }
 
     /// <summary>
