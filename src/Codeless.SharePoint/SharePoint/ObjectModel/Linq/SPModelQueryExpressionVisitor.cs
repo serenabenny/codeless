@@ -43,7 +43,7 @@ namespace Codeless.SharePoint.ObjectModel.Linq {
     }
 
     protected void Visit(ParameterizedExpression expression) {
-      base.VisitLambda(Expression.Lambda(expression.Expression, expression.Parameters.ToArray()));
+      Visit(expression.Expression);
       builder.Expression = this.currentScope.Expression;
       if (builder.SelectExpression != null) {
         builder.SelectExpression = Expression.Lambda<SPModelParameterizedQuery.ResultEvaluator>(EnsureReturnObject(builder.SelectExpression), pRes, pArr);
@@ -79,15 +79,13 @@ namespace Codeless.SharePoint.ObjectModel.Linq {
       }
       if (parameters.Contains(expression)) {
         currentScope.ParameterName = expression.Name;
-        if (invariantExpression) {
-          return Expression.Convert(Expression.ArrayIndex(pArr, Expression.Constant(parameters.IndexOf(expression))), expression.Type);
-        }
+        return Expression.Convert(Expression.ArrayIndex(pArr, Expression.Constant(parameters.IndexOf(expression))), expression.Type);
       }
       return expression;
     }
 
     protected override Expression VisitLambda(LambdaExpression expression) {
-      return invariantExpression ? expression : base.VisitLambda(expression);
+      return base.VisitLambda(expression);
     }
 
     protected override Expression VisitBinary(BinaryExpression expression) {
@@ -207,59 +205,57 @@ namespace Codeless.SharePoint.ObjectModel.Linq {
       if (invariantExpression) {
         return base.VisitMemberAccess(expression);
       }
+      if (expression.Expression != lambdaParam) {
+        if (expression.Member.DeclaringType == typeof(ISPModelMetaData) &&
+           ((expression.Expression.NodeType == ExpressionType.Call && ((MethodCallExpression)expression.Expression).Method == typeof(SPModelExtension).GetMethod("GetMetaData") && ((MethodCallExpression)expression.Expression).Arguments[0] == lambdaParam) ||
+            (expression.Expression.NodeType == ExpressionType.Convert && ((UnaryExpression)expression.Expression).Operand == lambdaParam))) {
+          // allow non-direct field access on the ISPModelMetaData interface
+        } else { 
+          Expression result = base.VisitMemberAccess(expression);
+          if (expression.Member.DeclaringType.IsGenericType && expression.Member.DeclaringType.GetGenericTypeDefinition() == typeof(Nullable<>) && expression.Member.Name == "HasValue" && builder.SelectExpression == null) {
+            CamlExpression expr = currentScope.GetExpression(v => Caml.IsNotNull(v.FieldRef));
+            currentScope.Reset();
+            currentScope.Expression = expr;
+          }
+          return result;
+        }
+      }
+
       currentScope.MemberType = expression.Type;
       currentScope.Member = expression.Member;
       currentScope.Field = default(SPModelQueryFieldInfo);
       currentScope.FieldAssociations = null;
 
-      switch (expression.Expression.NodeType) {
-        case ExpressionType.Parameter:
-        case ExpressionType.MemberAccess:
-        case ExpressionType.Convert:
-        case ExpressionType.Call:
-          if (expression.Member.DeclaringType == typeof(ISPModelMetaData)) {
-            switch (expression.Member.Name) {
-              case "ID":
-                currentScope.Field = SPModelQueryFieldInfo.ID;
-                break;
-              case "UniqueId":
-                currentScope.Field = SPModelQueryFieldInfo.UniqueId;
-                break;
-              case "FileRef":
-                currentScope.Field = SPModelQueryFieldInfo.FileRef;
-                break;
-              case "FileLeafRef":
-                currentScope.Field = SPModelQueryFieldInfo.FileLeafRef;
-                break;
-              case "LastModified":
-                currentScope.Field = SPModelQueryFieldInfo.LastModified;
-                break;
-              case "CheckOutUserID":
-                currentScope.Field = SPModelQueryFieldInfo.CheckOutUserID;
-                break;
-              default:
-                throw new NotSupportedException(String.Format("Member '{0}' is not supported", GetMemberFullName(expression.Member)));
-            }
-          } else if (expression.Member.DeclaringType == typeof(TaxonomyItem) || expression.Member.DeclaringType == typeof(SPPrincipal)) {
-            switch (expression.Member.Name) {
-              case "Id":
-              case "ID":
-                Visit(expression.Expression);
-                break;
-              default:
-                throw new NotSupportedException(String.Format("Member '{0}' is not supported", GetMemberFullName(expression.Member)));
-            }
-          } else {
-            currentScope.FieldAssociations = SPModelFieldAssociationCollection.GetByMember(expression.Member);
-            foreach (SPFieldAttribute field in currentScope.FieldAssociations.Fields) {
-              if (field.TypeAsString == "TaxonomyFieldType" || field.TypeAsString == "TaxonomyFieldTypeMulti") {
-                builder.TaxonomyFields.Add(field.ListFieldInternalName);
-              }
-            }
+      if (expression.Member.DeclaringType == typeof(ISPModelMetaData)) {
+        switch (expression.Member.Name) {
+          case "ID":
+            currentScope.Field = SPModelQueryFieldInfo.ID;
+            break;
+          case "UniqueId":
+            currentScope.Field = SPModelQueryFieldInfo.UniqueId;
+            break;
+          case "FileRef":
+            currentScope.Field = SPModelQueryFieldInfo.FileRef;
+            break;
+          case "FileLeafRef":
+            currentScope.Field = SPModelQueryFieldInfo.FileLeafRef;
+            break;
+          case "LastModified":
+            currentScope.Field = SPModelQueryFieldInfo.LastModified;
+            break;
+          case "CheckOutUserID":
+            currentScope.Field = SPModelQueryFieldInfo.CheckOutUserID;
+            break;
+          default:
+            throw new NotSupportedException(String.Format("Member '{0}' is not supported", GetMemberFullName(expression.Member)));
+        }
+      } else {
+        currentScope.FieldAssociations = SPModelFieldAssociationCollection.GetByMember(expression.Member);
+        foreach (SPFieldAttribute field in currentScope.FieldAssociations.Fields) {
+          if (field.TypeAsString == "TaxonomyFieldType" || field.TypeAsString == "TaxonomyFieldTypeMulti") {
+            builder.TaxonomyFields.Add(field.ListFieldInternalName);
           }
-          break;
-        default:
-          throw new NotSupportedException(String.Format("Member '{0}' is not supported", GetMemberFullName(expression.Member)));
+        }
       }
       if (builder.SelectExpression != null) {
         if (currentScope.Field.FieldRef != null) {
@@ -402,7 +398,9 @@ namespace Codeless.SharePoint.ObjectModel.Linq {
             } catch (ArgumentException) {
               throw new NotSupportedException("'OfType' constraint must be used with valid model type or interface type");
             }
-            builder.ContentTypeIds.RemoveAll(v => !descriptor.ContentTypeIds.Contains(v));
+            SPContentTypeId[] result = SPModelDescriptor.IntersectContentTypeIds(builder.ContentTypeIds, descriptor.ContentTypeIds.ToArray());
+            builder.ContentTypeIds.Clear();
+            builder.ContentTypeIds.AddRange(result);
           }
           return Caml.Empty;
       }
@@ -527,7 +525,7 @@ namespace Codeless.SharePoint.ObjectModel.Linq {
 
     private Expression VisitConditionalBranch(Expression expression) {
       Expression result = Visit(expression);
-      if (currentScope.Expression == null && expression.NodeType == ExpressionType.Parameter && expression.Type == typeof(bool)) {
+      if (currentScope.Expression == null && currentScope.ParameterName != null && expression.Type == typeof(bool)) {
         currentScope.Expression = new CamlLateBoundEmptyExpression(Caml.Parameter.BooleanString(currentScope.ParameterName));
       }
       return result;
@@ -571,8 +569,12 @@ namespace Codeless.SharePoint.ObjectModel.Linq {
     private CamlExpression HandleEqualityComparison(SPModelQueryFieldInfo s, CamlBinaryOperator op) {
       ICamlParameterBinding value = currentScope.GetValueBinding(s);
       CamlExpression expression = new CamlWhereBinaryComparisonExpression(op, s.FieldRef, value);
-      if (currentScope.MemberType.IsValueType || currentScope.MemberType == typeof(string)) {
-        string defaultValue = value.Bind(new Hashtable { { currentScope.ParameterName, currentScope.MemberType.IsValueType ? currentScope.MemberType.GetDefaultValue() : "" } });
+      Type memberType = currentScope.MemberType;
+      if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(Nullable<>)) {
+        memberType = memberType.GetGenericArguments()[0];
+      }
+      if (memberType.IsValueType || memberType == typeof(string)) {
+        string defaultValue = value.Bind(new Hashtable { { currentScope.ParameterName, memberType.IsValueType ? memberType.GetDefaultValue() : "" } });
         CamlExpression lateBoundCond = new CamlLateBoundDefaultValueAsNullExpression(s.FieldRef, value, defaultValue);
         return op == CamlBinaryOperator.Eq ? expression | lateBoundCond : expression & ~lateBoundCond;
       }
